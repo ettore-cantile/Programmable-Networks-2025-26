@@ -2,6 +2,7 @@ ip addr add 20.0.1.1/24 dev eth0
 
 /usr/share/openvswitch/scripts/ovs-ctl --system-id=random start
 ovs-vsctl add-br s1 
+ovs-vsctl set bridge s1 other-config:datapath-id=0000000000000001
 
 ovs-vsctl add-port s1 eth1
 ovs-vsctl add-port s1 eth2

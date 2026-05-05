@@ -3,6 +3,8 @@ ip addr add 20.0.1.4/24 dev eth0
 /usr/share/openvswitch/scripts/ovs-ctl --system-id=random start
 ovs-vsctl add-br s4
 
+ovs-vsctl set bridge s4 other-config:datapath-id=0000000000000004
+
 ovs-vsctl add-port s4 eth1
 ovs-vsctl add-port s4 eth2
 ovs-vsctl add-port s4 eth3
