@@ -6,4 +6,4 @@ ovs-vsctl add-br s3
 ovs-vsctl add-port s3 eth1
 ovs-vsctl add-port s3 eth2
 
-ovs-vsctl set-controller s3 tcp:20.0.1.5:6653
+ovs-vsctl set-controller s3 tcp:20.0.1.5:6633

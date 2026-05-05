@@ -9,4 +9,4 @@ ovs-vsctl add-port s4 eth3
 ovs-vsctl add-port s4 eth4
 ovs-vsctl add-port s4 eth5
 
-ovs-vsctl set-controller s4 tcp:20.0.1.5:6653
+ovs-vsctl set-controller s4 tcp:20.0.1.5:6633
