@@ -1,2 +1,0 @@
-ip addr add 10.0.0.102/8 dev eth0
-dpkg -i /shared/iperf*.deb

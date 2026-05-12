@@ -1,0 +1,14 @@
+ip address add 20.0.1.100/24 dev eth0
+
+# Directory for the Python Script & POX Components ( copied into /home/pox/ext from the "shared" folder )
+mkdir -p /pox/ext
+ln -s /shared/project_1.py /pox/ext/project_1.py
+
+# Granting Execution Permission to the Code
+chmod +x /pox/pox.py
+
+# Commands for the Device's Terminal ( after being started )
+# 1) apt-get update
+# 2) apt install python3-networkx -y
+# -) ( if something broken ) apt --fix-broken install -y
+# 3) /pox/pox.py openflow.discovery project_1 ( plus the configured parameters )

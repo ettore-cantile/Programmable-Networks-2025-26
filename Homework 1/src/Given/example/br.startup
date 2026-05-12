@@ -1,0 +1,19 @@
+ip address add 10.0.1.1/24 dev eth0
+ip address add 10.0.2.1/24 dev eth1
+ip address add 10.0.3.1/24 dev eth2
+ip address add 10.0.4.1/24 dev eth3
+ip address add 10.0.5.1/24 dev eth4
+ip address add 10.0.6.1/24 dev eth5
+
+tc qdisc add dev eth0 root handle 1: netem delay 0.5ms
+tc qdisc add dev eth0 parent 1: handle 2: tbf rate 100mbit burst 50000 limit 625000
+tc qdisc add dev eth1 root handle 1: netem delay 0.5ms
+tc qdisc add dev eth1 parent 1: handle 2: tbf rate 100mbit burst 50000 limit 625000
+tc qdisc add dev eth2 root handle 1: netem delay 0.5ms
+tc qdisc add dev eth2 parent 1: handle 2: tbf rate 100mbit burst 50000 limit 625000
+tc qdisc add dev eth3 root handle 1: netem delay 0.5ms
+tc qdisc add dev eth3 parent 1: handle 2: tbf rate 100mbit burst 50000 limit 625000
+tc qdisc add dev eth4 root handle 1: netem delay 0.5ms
+tc qdisc add dev eth4 parent 1: handle 2: tbf rate 100mbit burst 50000 limit 625000
+tc qdisc add dev eth5 root handle 1: netem delay 0.5ms
+tc qdisc add dev eth5 parent 1: handle 2: tbf rate 100mbit burst 50000 limit 625000
