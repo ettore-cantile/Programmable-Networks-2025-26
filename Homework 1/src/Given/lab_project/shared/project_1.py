@@ -52,7 +52,7 @@ class Project_1( object ):
         self.link_allocated_rate = {}
 
         # Cache to prevent a worker from changing paths while it is transmitting data
-        # Now stores a tuple: (selected_path, worker_expected_rate) for accurate Traffic Control freeing
+        # Stores a tuple: (selected_path, worker_expected_rate) for accurate Traffic Control freeing
         self.assigned_paths = {}
         
         # Parsing of collectors eventually passed to "launch" via CLI
@@ -244,6 +244,26 @@ class Project_1( object ):
         valid_paths.sort( key = len )
         return valid_paths
 
+    def purgeFlows( self, dst_ip ):
+        
+        # Purpose: Forcefully removes physical flows from all switches for a given collector.
+        # This guarantees that the next cycle forces a fresh PacketIn to get precise load-balanced routing.
+        for conn in core.openflow.connections:
+            
+            # Remove forward flows
+            msg = of.ofp_flow_mod()
+            msg.command = of.OFPFC_DELETE
+            msg.match.dl_type = 0x0800
+            msg.match.nw_dst = dst_ip
+            conn.send( msg )
+            
+            # Remove reverse (ACK) flows
+            msg_rev = of.ofp_flow_mod()
+            msg_rev.command = of.OFPFC_DELETE
+            msg_rev.match.dl_type = 0x0800
+            msg_rev.match.nw_src = dst_ip
+            conn.send( msg_rev )
+
     # MODULE 2: Worker Discovery
     def _handle_PacketIn( self, event ):
 
@@ -284,7 +304,7 @@ class Project_1( object ):
                     msg.actions.append( of.ofp_action_output( port = event.port ) )
                     event.connection.send( msg )
                     return
-
+                    
             # 2. ARP REPLY UNICAST: Do not flood replies, send them directly
             elif arp_packet.opcode == arp.REPLY:
                 target_ip = str( arp_packet.protodst )
@@ -296,7 +316,7 @@ class Project_1( object ):
                         msg.actions.append( of.ofp_action_output( port = tgt_port ) )
                         core.openflow.connections[ tgt_dpid ].send( msg )
                 return
-                    
+
             # 3. SMART EDGE-FLOODING: If we do not know it, we send the ARP
             # EXCLUSIVELY to the hosts, bypassing the Spine links.
             for dpid in self.topology:
@@ -341,9 +361,7 @@ class Project_1( object ):
                     log.info( "New Worker %s added to %s.", src_ip, self.collectors[ dst_ip ] )
                 
                 if dst_ip not in self.ip_to_location:
-                    # CRITICAL FIX: DO NOT use OFPP_FLOOD here. It causes exponential broadcast storms 
-                    # in loopy topologies (Spine-Leaf) killing the CPU.
-                    # Just drop it. TCP will retransmit once ARP resolves the MAC.
+                    # Prevent Broadcast Storm: Do not flood unknown IP packets. TCP will retransmit.
                     return
 
                 # ( in any case ) the routing module is triggered to install the path
@@ -372,6 +390,9 @@ class Project_1( object ):
                             if edge in self.link_allocated_rate:
                                 self.link_allocated_rate[ edge ] = max( 0.0, self.link_allocated_rate[ edge ] - r )
                         del self.assigned_paths[ w ]
+
+                # Physically purge flows to clean up the network
+                self.purgeFlows( key )
 
                 data[ "Round" ] = 0
                 data[ "Workers" ].clear()
@@ -452,14 +473,6 @@ class Project_1( object ):
                             training_data[ "Tv_Period" ] = current_time - training_data[ "Last_Round_Start" ]
 
                         training_data[ "Last_Round_Start" ] = current_time
-                        # Measure Period Tv: only update if the gap since last start is significant 
-                        # (avoiding jitter from fragmented rounds)
-                        gap = current_time - training_data[ "Last_Round_Start" ]
-                        if training_data[ "Last_Round_Start" ] > 0 and gap > (self.idle / 2):
-                            training_data[ "Tv_Period" ] = gap
-                            training_data[ "Last_Round_Start" ] = current_time
-                        elif training_data[ "Last_Round_Start" ] == 0:
-                            training_data[ "Last_Round_Start" ] = current_time
                         
                         # Note: The phase is fixed and never overwritten again (-1 indicates it hasn't been set)
                         if training_data[ "Phase" ] == -1.0:
@@ -486,11 +499,8 @@ class Project_1( object ):
                         
                         training_data[ "Silence_Count" ] += 1
                         
-                        # Apply Grace Period: Close round quickly to avoid merging cycles in congested networks
-                        if training_data[ "Silence_Count" ] >= 1:
-                        # Apply Grace Period: wait for a more stable silence (approx 1.5s at 0.5s period)
-                        # to prevent premature splitting due to TCP RTO / Window fluctuations.
-                        if training_data[ "Silence_Count" ] >= 3:
+                        # Apply Grace Period to prevent premature splitting
+                        if training_data[ "Silence_Count" ] >= 2:
                             training_data[ "In_Burst" ] = False
                             training_data[ "Silence_Count" ] = 0
                             
@@ -527,6 +537,9 @@ class Project_1( object ):
                                             if edge in self.link_allocated_rate:
                                                 self.link_allocated_rate[ edge ] = max( 0.0, self.link_allocated_rate[ edge ] - r )
                                         del self.assigned_paths[ w ]
+                                        
+                                # Physically purge flows to force next cycle to perform fresh Traffic Control routing
+                                self.purgeFlows( dst_ip )
 
             training_data[ "Last_Time" ] = current_time
 
@@ -595,10 +608,9 @@ class Project_1( object ):
             # Note: "Active_This_Round" is used to estimate capacity if available, otherwise fallback to history
             active_set = training_data.get( "Active_This_Round", set() )
             K_v = len( active_set ) if len( active_set ) > 0 else len( training_data.get( "Workers", set() ) )
-            K_v = max( 1, K_v )
             
-            # CRITICAL FIX: An Incast worker always attempts to transmit at the maximum speed allowed by the collector bottleneck.
-            # Using historical T_v creates a negative feedback loop (slow network -> low expected rate -> bad routing -> slow network).
+            # Prevent negative feedback loop: distribute capacity evenly among workers
+            K_v = max( 1, K_v )
             worker_expected_rate = self.capacity / float( K_v )
             
             selected_path = k_paths[ 0 ]
@@ -612,7 +624,7 @@ class Project_1( object ):
                     edge = ( p[ i ], p[ i + 1 ] )
 
                     current_load = self.link_allocated_rate.get( edge, 0.0 )
-                    saturation = ( ( current_load + worker_expected_rate ) / self.capacity ) * 100
+                    saturation = ( ( current_load + worker_expected_rate ) / float( self.capacity ) ) * 100
                     
                     if saturation > path_bottleneck: 
                         path_bottleneck = saturation
@@ -687,9 +699,8 @@ class Project_1( object ):
         msg.match.nw_src = src_ip # IP del Collector
         msg.match.nw_dst = dst_ip # IP del Worker
         
-        # Cap idle_timeout to ensure rules expire in the silence gap between cycles
-        # Using 0.8 * Tv ensures rules are cleared before the next burst starts
-        msg.idle_timeout = min( max( int( estimated_tv * 0.8 ), self.idle ), 25 ) 
+        # No TCP port here: let all responses return
+        msg.idle_timeout = max( int( estimated_tv * 1.5 ), self.idle ) 
         msg.hard_timeout = self.hard 
         
         msg.actions.append( of.ofp_action_output( port = out_port ) ) 
@@ -707,12 +718,10 @@ class Project_1( object ):
         msg = of.ofp_flow_mod() 
         msg.priority = 65535 # High priority to override forwarding.l2_learning
         msg.match.dl_type = 0x0800 # Ethernet type IPv4 
-        msg.match.nw_proto = 6 # TCP Protocol
         msg.match.nw_src = src_ip # Source IP ( Worker )
         msg.match.nw_dst = dst_ip # Destination IP ( Collector )
         
-        # Cap idle_timeout to avoid merging cycles
-        msg.idle_timeout = min( max( int( estimated_tv * 0.8 ), self.idle ), 25 ) 
+        msg.idle_timeout = max( int( estimated_tv * 1.5 ), self.idle ) # Remove unused rules after tot. seconds
         msg.hard_timeout = self.hard # Force expiration to allow continuous rebalancing
         
         msg.actions.append( of.ofp_action_output( port = out_port ) ) 

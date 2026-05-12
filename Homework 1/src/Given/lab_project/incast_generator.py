@@ -238,27 +238,44 @@ def plot_collectors(files):
 
 
 def plot_workers(files):
-    n = len(files)
-    fig, axes = plt.subplots(n, 1, figsize=(8, 3*n), sharex=True)
+    # Purpose: Aggregates the TX throughput of all workers belonging to the same training
+    # to display a clean, readable Total TX graph per training instead of a messy overlapping plot.
+    n = len(TRAININGS)
+    fig, axes = plt.subplots(n, 1, figsize=(10, 3*n), sharex=True)
 
     if n == 1:
         axes = [axes]
 
-    for ax, (label, fname) in zip(axes, files.items()):
-        t, y = [], []
-        with open(fname) as f:
-            next(f)
-            for line in f:
-                a, b = line.split()
-                t.append(float(a))
-                y.append(float(b))
+    for ax, cfg in zip(axes, TRAININGS):
+        t_name = cfg["name"].upper()
+        agg_data = {}
 
-        ax.plot(t, y)
-        ax.set_title(label)
-        ax.grid()
+        # Sum throughput for all workers in this training at each timestamp
+        for w in cfg["senders"]:
+            if w in files:
+                with open(files[w]) as f:
+                    next(f) # Skip header
+                    for line in f:
+                        t_val, thr = line.split()
+                        t_val = float(t_val)
+                        thr = float(thr)
+                        agg_data[t_val] = agg_data.get(t_val, 0.0) + thr
 
-    axes[-1].set_xlabel("Time")
-    fig.suptitle("Worker TX")
+        # Sort by time to plot correctly
+        sorted_times = sorted(agg_data.keys())
+        sorted_thrs = [agg_data[t] for t in sorted_times]
+
+        # Determine color based on training name for visual consistency
+        color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
+        plot_color = color_map.get(t_name, "tab:blue")
+
+        ax.plot(sorted_times, sorted_thrs, color=plot_color, linewidth=2)
+        ax.set_title(f"Aggregated Worker TX - Training {t_name}")
+        ax.set_ylabel("Total Mbps")
+        ax.grid(True)
+
+    axes[-1].set_xlabel("Time (s)")
+    plt.tight_layout()
     plt.show()
 
 
