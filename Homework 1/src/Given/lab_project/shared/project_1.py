@@ -21,6 +21,9 @@ time.tzset()
 # Silencing annoying system unpacking errors
 logging.getLogger( "packet" ).setLevel( logging.WARNING )
 
+# Silencing annoying system unpacking errors
+logging.getLogger( "packet" ).setLevel( logging.CRITICAL )
+
 # Silencing chatty LLDP messages from the discovery module
 logging.getLogger( "openflow.discovery" ).setLevel( logging.WARNING )
 
