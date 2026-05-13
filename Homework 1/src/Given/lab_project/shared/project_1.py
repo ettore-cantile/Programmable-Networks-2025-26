@@ -43,6 +43,10 @@ class Project_1( object ):
         else:
             self.topology = nx.DiGraph() 
         
+        # Variables to track topology stability and inform the user
+        self.topology_stable = False
+        self.topology_timer = None
+
         # Dynamic host tracking: IP map -> ( edge switch DPID, in_port, MAC )
         self.ip_to_location = {}
 
@@ -87,14 +91,17 @@ class Project_1( object ):
                 "Worker_Bytes": {}, # Historical byte buffer for each worker
                 "Dv": 0, # Volume of data in the current round
                 "Last_Dv": 0, # Persistent volume of the PREVIOUS round
+                "Total_Accumulated_Bytes": 0, # Total data accumulated over all rounds for final logging
                 "Duration": 0, # Physical duration of the burst
                 "Tv_Period": 0.0, # Period between the start of rounds
+                "Min_Gap": 10000.0, # Minimum valid gap estimator to stabilize Tv_Period against congestion merges
                 "Phase": -1.0, # Fixed time when training procedure starts
                 "Last_Time": time.time(), # Last polling timestamp
                 "In_Burst": False, # State
                 "Silence_Count": 0, # Tolerance mechanism for TCP RTO
                 "Round": 0, # Global iteration counter
-                "Last_Round_Start": 0.0, # Helper to calculate Tv_Period
+                "Current_Burst_Start": 0.0, # Temporary anchor to measure the start of the ongoing burst
+                "Last_Real_Round_Start": 0.0, # Persistent anchor of the last completely valid ML round
                 "Last_Activity_Time": time.time()
             } for c in self.collectors
         }
@@ -111,10 +118,25 @@ class Project_1( object ):
         # Start an asynchronous timer to query for status every "period" seconds
         Timer( self.period, self.requestStatistics, recurring = True )
 
+    def _reset_topology_timer( self ):
+        # Resets the timer to detect topology stability
+        if self.topology_stable:
+            return
+        if self.topology_timer:
+            self.topology_timer.cancel()
+        self.topology_timer = Timer( 5.0, self._declare_topology_stable )
+
+    def _declare_topology_stable( self ):
+        # Logs a message to inform the user that the topology is stable
+        self.topology_stable = True
+        log.info( "*** Topology stabilized! You can now start the incast generator. ***" )
+
     # MODULE 1: Topology & Host Discovery
     def _handle_LinkEvent( self, event ):
 
         # Purpose: It manages both topology and host discovery, updating the reference ( according to the version ) whenever an internal link is detected ( or falls )
+
+        self._reset_topology_timer()
 
         link = event.link
 
@@ -139,7 +161,7 @@ class Project_1( object ):
             
             for ip in to_delete:
                 del self.ip_to_location[ ip ]
-                log.info( "Host %s removed from cache (port discovered as internal).", ip )
+                log.debug( "Host %s removed from cache (port discovered as internal).", ip )
 
         elif event.removed:
             if self.version == 1:
@@ -161,11 +183,13 @@ class Project_1( object ):
                 
             # Note: The cache must be erased because the topology changed ( paths must be computed again )
             self.path_cache.clear()
-            log.info( "Topology modified... Path cache emptied." )
+            log.debug( "Topology modified... Path cache emptied." )
 
     def _handle_ConnectionUp( self, event ):
 
         # Purpose: It registers the switch nodes in the network topology when they connect to the controller
+
+        self._reset_topology_timer()
 
         if self.version == 1:
             if event.dpid not in self.topology:
@@ -186,7 +210,9 @@ class Project_1( object ):
         if event.dpid in self.topology:
             for neighbor in self.topology[ event.dpid ]:
                 if self.version == 1:
-                    internal_port = self.topology[ event.dpid ][ neighbor ]
+                    internal_port = self.topology[ event.dpid ]
+                    if type(internal_port) == dict:
+                        internal_port = internal_port[ neighbor ]
                 else:
                     internal_port = self.topology[ event.dpid ][ neighbor ][ "port" ]
                 
@@ -248,21 +274,21 @@ class Project_1( object ):
         
         # Purpose: Forcefully removes physical flows from all switches for a given collector.
         # This guarantees that the next cycle forces a fresh PacketIn to get precise load-balanced routing.
-        for conn in core.openflow.connections:
+        for connection in core.openflow.connections:
             
             # Remove forward flows
             msg = of.ofp_flow_mod()
             msg.command = of.OFPFC_DELETE
             msg.match.dl_type = 0x0800
             msg.match.nw_dst = dst_ip
-            conn.send( msg )
+            connection.send( msg )
             
             # Remove reverse (ACK) flows
             msg_rev = of.ofp_flow_mod()
             msg_rev.command = of.OFPFC_DELETE
             msg_rev.match.dl_type = 0x0800
             msg_rev.match.nw_src = dst_ip
-            conn.send( msg_rev )
+            connection.send( msg_rev )
 
     # MODULE 2: Worker Discovery
     def _handle_PacketIn( self, event ):
@@ -358,7 +384,8 @@ class Project_1( object ):
                 # the relative worker must be inserted ( if not previously done )
                 if src_ip not in training_data[ "Workers" ]:
                     training_data[ "Workers" ].add( src_ip )
-                    log.info( "New Worker %s added to %s.", src_ip, self.collectors[ dst_ip ] )
+                    # Logging the insertion of a new worker as requested
+                    log.info( "New Worker %s successfully registered to %s.", src_ip, self.collectors[ dst_ip ] )
                 
                 if dst_ip not in self.ip_to_location:
                     # Prevent Broadcast Storm: Do not flood unknown IP packets. TCP will retransmit.
@@ -379,6 +406,13 @@ class Project_1( object ):
 
         for key, data in self.trainings.items():
             if data[ "Phase" ] > -1.0 and ( current_time - data[ "Last_Activity_Time" ] ) > self.inactivity:
+                
+                # Logging the total data sent by this training before performing the global reset
+                total_mb = data[ "Total_Accumulated_Bytes" ] / 1000000.0
+                log.info( "=======================================================" )
+                log.info( "TRAINING %s COMPLETED. Total Data Sent: %.2f MB", self.collectors[ key ], total_mb )
+                log.info( "=======================================================" )
+                
                 log.info( "Procedure %s finished. Global reset.", self.collectors[ key ] )
                 
                 # Free bandwidth allocations specific to this training's workers
@@ -400,10 +434,13 @@ class Project_1( object ):
                 data[ "Worker_Bytes" ].clear()
                 data[ "Dv" ] = 0
                 data[ "Last_Dv" ] = 0
+                data[ "Total_Accumulated_Bytes" ] = 0
                 data[ "Duration" ] = 0
                 data[ "Tv_Period" ] = 0.0
+                data[ "Min_Gap" ] = 10000.0
                 data[ "Phase" ] = -1.0
-                data[ "Last_Round_Start" ] = 0.0
+                data[ "Current_Burst_Start" ] = 0.0
+                data[ "Last_Real_Round_Start" ] = 0.0
                 data[ "Last_Activity_Time" ] = current_time
                 data[ "In_Burst" ] = False
                 data[ "Silence_Count" ] = 0
@@ -450,6 +487,8 @@ class Project_1( object ):
                 
                 if diff > 0:
                     active_in_cycle.add( src_ip )
+                    # Accumulating the total bytes for the final summary log
+                    training_data[ "Total_Accumulated_Bytes" ] += diff
                     
             time_difference = current_time - training_data[ "Last_Time" ]
             
@@ -469,10 +508,9 @@ class Project_1( object ):
                             self.first_burst_detected = True
                             self.global_start_time = current_time
 
-                        if training_data[ "Last_Round_Start" ] > 0:
-                            training_data[ "Tv_Period" ] = current_time - training_data[ "Last_Round_Start" ]
-
-                        training_data[ "Last_Round_Start" ] = current_time
+                        # CRITICAL FIX: Only store the temporary start timestamp here. 
+                        # We will validate if it's a real ML round (and calculate Tv) only when the burst finishes.
+                        training_data[ "Current_Burst_Start" ] = current_time
                         
                         # Note: The phase is fixed and never overwritten again (-1 indicates it hasn't been set)
                         if training_data[ "Phase" ] == -1.0:
@@ -499,8 +537,10 @@ class Project_1( object ):
                         
                         training_data[ "Silence_Count" ] += 1
                         
-                        # Apply Grace Period to prevent premature splitting
-                        if training_data[ "Silence_Count" ] >= 2:
+                        # Apply dynamic Grace Period: scales safely with the chosen polling period
+                        required_silence = max( 1, int( 2.0 / self.period ) )
+                        
+                        if training_data[ "Silence_Count" ] >= required_silence:
                             training_data[ "In_Burst" ] = False
                             training_data[ "Silence_Count" ] = 0
                             
@@ -508,13 +548,25 @@ class Project_1( object ):
                             d_v_mb = d_v / 1000000.0  # Convert volume to MB
                             
                             # Ignore trivial TCP ACKs phantom rounds (must be > 1 MB)
+                            # This completely isolates the Tv measurement from network stragglers
                             if d_v_mb > 1.0:
+                                
+                                # Period Estimation mathematically converges to the true T_v without congestion interference
+                                if training_data[ "Last_Real_Round_Start" ] > 0:
+                                    gap = training_data[ "Current_Burst_Start" ] - training_data[ "Last_Real_Round_Start" ]
+                                    if gap < training_data[ "Min_Gap" ]:
+                                        training_data[ "Min_Gap" ] = gap
+                                    training_data[ "Tv_Period" ] = training_data[ "Min_Gap" ]
+                                
+                                training_data[ "Last_Real_Round_Start" ] = training_data[ "Current_Burst_Start" ]
+                                
                                 training_data[ "Round" ] += 1
                                 current_round = training_data[ "Round" ]
                                 active_workers = list( training_data[ "Active_This_Round" ] )
                                 k_v = len( active_workers )
                                 t_v = training_data[ "Tv_Period" ]
-                                phi_v = training_data[ "Phase" ]
+                                phi_v = training_data[ "Phase" ] + 1.0
+
                                 training_name = self.collectors[ dst_ip ]
 
                                 log.info( "=" * 55 )
@@ -547,9 +599,6 @@ class Project_1( object ):
     def installRoute( self, src_dpid, src_ip, dst_ip, training_data ):
 
         # Purpose: It calculates k-shortest paths with appropriate caching ( both flows & routes )
-        
-        # First, the "Period" of the burst is considered to dynamically adjust the OpenFlow timeouts
-        estimated_tv = training_data[ "Tv_Period" ] if training_data[ "Tv_Period" ] > 0 else float( self.idle )
         
         # Then, the anti Packet-In storms mechanism is configured
         flow = ( src_ip, dst_ip )
@@ -655,10 +704,10 @@ class Project_1( object ):
             else:
                 out_port = self.topology[ current_node ][ next_node ][ "port" ]
 
-            self.sendFlowMod( current_node, src_ip, dst_ip, out_port, estimated_tv )
+            self.sendFlowMod( current_node, src_ip, dst_ip, out_port )
         
         # -) Storing the last rule on the switch that connects directly to the collector
-        self.sendFlowMod( dest_dpid, src_ip, dst_ip, dest_port, estimated_tv )
+        self.sendFlowMod( dest_dpid, src_ip, dst_ip, dest_port )
         
         # =========================================================
         # 🔄 SYMMETRIC ROUTING: Install the return route (ACK)
@@ -677,15 +726,15 @@ class Project_1( object ):
                 else:
                     out_port = self.topology[ current_node ][ next_node ][ "port" ]
                     
-                self.sendReverseFlowMod( current_node, dst_ip, src_ip, out_port, estimated_tv )
+                self.sendReverseFlowMod( current_node, dst_ip, src_ip, out_port )
                 
             # Final rule on the switch connected to the Worker
-            self.sendReverseFlowMod( src_dpid_loc, dst_ip, src_ip, src_port_loc, estimated_tv )
+            self.sendReverseFlowMod( src_dpid_loc, dst_ip, src_ip, src_port_loc )
         # =========================================================
         
         self.installed_flows[ flow ] = current_time
 
-    def sendReverseFlowMod( self, dpid, src_ip, dst_ip, out_port, estimated_tv ):
+    def sendReverseFlowMod( self, dpid, src_ip, dst_ip, out_port ):
 
         # Purpose: Installs the symmetric return path for TCP ACKs (Collector -> Worker)
         connection = core.openflow.getConnection( dpid )
@@ -699,14 +748,14 @@ class Project_1( object ):
         msg.match.nw_src = src_ip # IP del Collector
         msg.match.nw_dst = dst_ip # IP del Worker
         
-        # No TCP port here: let all responses return
-        msg.idle_timeout = max( int( estimated_tv * 1.5 ), self.idle ) 
+        # Use a long, safe timeout. Let purgeFlows manually handle flow removal.
+        msg.idle_timeout = self.inactivity 
         msg.hard_timeout = self.hard 
         
         msg.actions.append( of.ofp_action_output( port = out_port ) ) 
         connection.send( msg )
 
-    def sendFlowMod( self, dpid, src_ip, dst_ip, out_port, estimated_tv ):
+    def sendFlowMod( self, dpid, src_ip, dst_ip, out_port ):
 
         # Purpose: It creates and sends the OpenFlow Flow-Mod message to the specified switch
 
@@ -721,8 +770,9 @@ class Project_1( object ):
         msg.match.nw_src = src_ip # Source IP ( Worker )
         msg.match.nw_dst = dst_ip # Destination IP ( Collector )
         
-        msg.idle_timeout = max( int( estimated_tv * 1.5 ), self.idle ) # Remove unused rules after tot. seconds
-        msg.hard_timeout = self.hard # Force expiration to allow continuous rebalancing
+        # Use a long, safe timeout. Let purgeFlows manually handle flow removal.
+        msg.idle_timeout = self.inactivity 
+        msg.hard_timeout = self.hard 
         
         msg.actions.append( of.ofp_action_output( port = out_port ) ) 
         connection.send( msg )
