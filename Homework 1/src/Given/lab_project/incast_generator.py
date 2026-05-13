@@ -236,10 +236,10 @@ def plot_collectors(files):
     plt.grid()
     plt.show()
 
-
 def plot_workers(files):
-    # Purpose: Aggregates the TX throughput of all workers belonging to the same training
-    # to display a clean, readable Total TX graph per training instead of a messy overlapping plot.
+    
+    # Purpose: It aggregates the TX throughput of all workers belonging to the same training
+    
     n = len(TRAININGS)
     fig, axes = plt.subplots(n, 1, figsize=(10, 3*n), sharex=True)
 
@@ -250,22 +250,19 @@ def plot_workers(files):
         t_name = cfg["name"].upper()
         agg_data = {}
 
-        # Sum throughput for all workers in this training at each timestamp
         for w in cfg["senders"]:
             if w in files:
                 with open(files[w]) as f:
-                    next(f) # Skip header
+                    next(f)
                     for line in f:
                         t_val, thr = line.split()
                         t_val = float(t_val)
                         thr = float(thr)
                         agg_data[t_val] = agg_data.get(t_val, 0.0) + thr
 
-        # Sort by time to plot correctly
         sorted_times = sorted(agg_data.keys())
         sorted_thrs = [agg_data[t] for t in sorted_times]
 
-        # Determine color based on training name for visual consistency
         color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
         plot_color = color_map.get(t_name, "tab:blue")
 
@@ -278,6 +275,82 @@ def plot_workers(files):
     plt.tight_layout()
     plt.show()
 
+def plot_bandwidth_fairness(rx_files):
+    
+    # Purpose: Stacked area chart showing how the SDN controller dynamically 
+    
+    plt.figure(figsize=(10, 5))
+    
+    all_times = set()
+    data_series = {label: {} for label in rx_files.keys()}
+    
+    for label, fname in rx_files.items():
+        with open(fname) as f:
+            next(f)
+            for line in f:
+                t_val, thr = line.split()
+                t_val = float(t_val)
+                all_times.add(t_val)
+                data_series[label][t_val] = float(thr)
+                
+    sorted_times = sorted(list(all_times))
+    
+    y_data = []
+    labels = []
+    colors = []
+    color_map = {"c1": "tab:blue", "c2": "tab:green", "c3": "tab:red", "c4": "tab:orange"}
+    name_map = {"c1": "BLUE", "c2": "GREEN", "c3": "RED", "c4": "YELLOW"}
+    
+    for c in ["c1", "c2", "c3", "c4"]:
+        y = [data_series[c].get(t, 0.0) for t in sorted_times]
+        y_data.append(y)
+        labels.append(f"Training {name_map[c]}")
+        colors.append(color_map[c])
+        
+    plt.stackplot(sorted_times, y_data, labels=labels, colors=colors, alpha=0.85)
+    
+    plt.title("Dynamic Bandwidth Allocation (Capacity-Aware Fairness)")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Aggregated Throughput (Mbps)")
+    
+    plt.axhline(y=100, color='black', linestyle='--', linewidth=2, label='Single Link Hardware Limit (100 Mbps)')
+    
+    plt.legend(loc='upper right')
+    plt.grid(True, linestyle=':', alpha=0.6)
+    plt.tight_layout()
+    plt.show()
+
+def plot_cumulative_data(rx_files):
+    
+    # Purpose: It visualizes the completion of ML cycles as cumulative data ( MB )
+    
+    plt.figure(figsize=(10, 4))
+    color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
+
+    for label, fname in rx_files.items():
+        t_name = [cfg["name"].upper() for cfg in TRAININGS if cfg["collector"] == label][0]
+        t_vals, cum_mb = [], []
+        cumulative = 0.0
+        
+        with open(fname) as f:
+            next(f)
+            for line in f:
+                t_val, thr_mbps = line.split()
+                # 1 Mbps = 0.125 MB/s. Multiplying by 1 second polling interval
+                mb_transferred = float(thr_mbps) / 8.0 
+                cumulative += mb_transferred
+                t_vals.append(float(t_val))
+                cum_mb.append(cumulative)
+                
+        plt.plot(t_vals, cum_mb, label=f"Training {t_name}", color=color_map.get(t_name, "tab:blue"), linewidth=2)
+
+    plt.title("Cumulative Data Transferred per Training")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Cumulative Data (MB)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 # =========================
 # MAIN
@@ -352,9 +425,12 @@ def main():
     print("\nPlotting...")
     plot_collectors(rx_files)
     plot_workers(tx_files)
+    
+    # Note: Following instructions are related to the calls for new plots
+    plot_bandwidth_fairness(rx_files)
+    plot_cumulative_data(rx_files)
 
     print("\n=== DONE ===\n")
-
 
 if __name__ == "__main__":
     main()
