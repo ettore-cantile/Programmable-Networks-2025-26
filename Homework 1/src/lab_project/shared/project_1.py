@@ -122,7 +122,7 @@ class Project_1( object ):
         if self.topology_timer:
             self.topology_timer.cancel()
 
-        self.topology_timer = Timer( 5.0, self.declareTopologyStable )
+        self.topology_timer = Timer( 15.0, self.declareTopologyStable )
 
     def declareTopologyStable( self ):
 
