@@ -24,7 +24,7 @@ logging.getLogger( "openflow.discovery" ).setLevel( logging.WARNING )
 log = core.getLogger()
 
 class Project_1( object ):
-    def __init__( self, burst, capacity, collectors, cutoff, hard, inactivity, k, period, version ):
+    def __init__( self, burst, capacity, collectors, cutoff, hard, inactivity, k, period, stability, version ):
 
         # Purpose: It initializes the SDN component to orchestrate the ML trainings
 
@@ -72,7 +72,8 @@ class Project_1( object ):
         self.k = int( k ) # the maximum number of redundant paths to compute and cache between any source and destination ( K-Shortest Paths )
         self.period = float( period ) # the polling interval ( seconds ) for the Controller to request traffic statistics from edge switches
         self.inactivity = inactivity # the absolute silence duration ( seconds ) required to declare a training procedure fully completed and trigger a global reset
-        
+        self.stability = stability
+
         # Variables to align the "Phase" visually with the traffic generator execution
         self.first_burst_detected = False
         self.global_start_time = 0.0
@@ -122,7 +123,7 @@ class Project_1( object ):
         if self.topology_timer:
             self.topology_timer.cancel()
 
-        self.topology_timer = Timer( 15.0, self.declareTopologyStable )
+        self.topology_timer = Timer( self.stability, self.declareTopologyStable )
 
     def declareTopologyStable( self ):
 
@@ -751,8 +752,8 @@ class Project_1( object ):
         msg.actions.append( of.ofp_action_output( port = out_port ) ) 
         connection.send( msg )
 
-def launch( burst = 100000, capacity = 12500000, collectors = "10.0.1.1:Training_Blue,10.0.1.2:Training_Green,10.0.1.3:Training_Red,10.0.1.4:Training_Yellow", cutoff = 3, hard = 0, inactivity = 120, k = 2, period = 1, version = 1 ):
+def launch( burst = 100000, capacity = 12500000, collectors = "10.0.1.1:Training_Blue,10.0.1.2:Training_Green,10.0.1.3:Training_Red,10.0.1.4:Training_Yellow", cutoff = 3, hard = 0, inactivity = 120, k = 2, period = 1, stability = 15, version = 1 ):
     
     # Purpose: It represents the POX entry point. Parameters can be injected using the command line
     
-    core.registerNew( Project_1, burst, capacity, collectors, cutoff, hard, inactivity, k, period, version )
+    core.registerNew( Project_1, burst, capacity, collectors, cutoff, hard, inactivity, k, period, stability, version )
