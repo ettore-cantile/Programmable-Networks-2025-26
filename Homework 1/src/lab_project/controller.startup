@@ -8,7 +8,4 @@ ln -s /shared/project_1.py /pox/ext/project_1.py
 chmod +x /pox/pox.py
 
 # Commands for the Device's Terminal ( after being started )
-# 1) apt-get update
-# 2) apt install python3-networkx -y
-# -) ( if something broken ) apt --fix-broken install -y
-# 3) /pox/pox.py openflow.discovery project_1 ( plus the configured parameters )
+# /pox/pox.py openflow.discovery project_1 ( plus the configured parameters )
