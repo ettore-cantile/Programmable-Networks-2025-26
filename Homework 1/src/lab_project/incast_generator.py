@@ -126,7 +126,7 @@ def start_client(worker, target_ip, port, D_mbit, f_v, cmap):
 
 
 # =========================
-# MONITOR RX
+# MONITOR RX (Collectors)
 # =========================
 def get_rx(node, cmap):
     r = subprocess.run(
@@ -140,6 +140,7 @@ def get_rx(node, cmap):
 def monitor_rx(node, cmap, logfile, stop_event):
     print(f"[MONITOR RX] {node}")
     prev = get_rx(node, cmap)
+    last_time = time.time()  
     t = 0
 
     with open(logfile, "w") as f:
@@ -148,15 +149,61 @@ def monitor_rx(node, cmap, logfile, stop_event):
         while not stop_event.is_set():
             time.sleep(1)
             curr = get_rx(node, cmap)
-            thr = (curr - prev) * 8 / 1e6
+            curr_time = time.time()
+            
+            dt = curr_time - last_time
+            if dt > 0:
+                thr = (curr - prev) * 8 / (1e6 * dt)
+            else:
+                thr = 0.0
+                
+            t += 1 
             f.write(f"{t} {thr}\n")
             f.flush()
+            
             prev = curr
-            t += 1
-
+            last_time = curr_time
 
 # =========================
-# MONITOR TX
+# MONITOR SPINE LINKS (L3)
+# =========================
+def monitor_l3_spine(interface, cmap, logfile, stop_event):
+    print(f"[MONITOR SPINE] l3 interface {interface}")
+    
+    def get_spine_rx():
+        r = subprocess.run(
+            ["docker", "exec", cmap.get("l3", ""),
+             "cat", f"/sys/class/net/{interface}/statistics/rx_bytes"],
+            capture_output=True, text=True
+        )
+        return int(r.stdout.strip() or 0)
+        
+    prev = get_spine_rx()
+    last_time = time.time()
+    t = 0
+    
+    with open(logfile, "w") as f:
+        f.write("time throughput_mbps\n")
+        while not stop_event.is_set():
+            time.sleep(1)
+            curr = get_spine_rx()
+            curr_time = time.time()
+            
+            dt = curr_time - last_time
+            if dt > 0:
+                thr = (curr - prev) * 8 / (1e6 * dt)
+            else:
+                thr = 0.0
+                
+            t += 1
+            f.write(f"{t} {thr}\n")
+            f.flush()
+            
+            prev = curr
+            last_time = curr_time
+
+# =========================
+# MONITOR TX (Workers)
 # =========================
 def get_tx(node, cmap):
     r = subprocess.run(
@@ -170,6 +217,7 @@ def get_tx(node, cmap):
 def monitor_tx(node, cmap, logfile, stop_event):
     print(f"[MONITOR TX] {node}")
     prev = get_tx(node, cmap)
+    last_time = time.time()  
     t = 0
 
     with open(logfile, "w") as f:
@@ -178,11 +226,20 @@ def monitor_tx(node, cmap, logfile, stop_event):
         while not stop_event.is_set():
             time.sleep(1)
             curr = get_tx(node, cmap)
-            thr = (curr - prev) * 8 / 1e6
+            curr_time = time.time()
+            
+            dt = curr_time - last_time
+            if dt > 0:
+                thr = (curr - prev) * 8 / (1e6 * dt)
+            else:
+                thr = 0.0
+                
+            t += 1
             f.write(f"{t} {thr}\n")
             f.flush()
+            
             prev = curr
-            t += 1
+            last_time = curr_time
 
 
 # =========================
@@ -237,9 +294,6 @@ def plot_collectors(files):
     plt.show()
 
 def plot_workers(files):
-    
-    # Purpose: It aggregates the TX throughput of all workers belonging to the same training
-    
     n = len(TRAININGS)
     fig, axes = plt.subplots(n, 1, figsize=(10, 3*n), sharex=True)
 
@@ -271,49 +325,34 @@ def plot_workers(files):
         ax.set_ylabel("Total Mbps")
         ax.grid(True)
 
-    axes[-1].set_xlabel("Time (s)")
+    axes[-1].set_xlabel("Time (Measurement Epoch)")
     plt.tight_layout()
     plt.show()
 
-def plot_bandwidth_fairness(rx_files):
+def plot_bandwidth_fairness(spine_files):
     
-    # Purpose: Stacked area chart showing how the SDN controller dynamically 
+    # Purpose: Shows the traffic passing through the two physical bottleneck links (Spine 1 and Spine 2)
     
     plt.figure(figsize=(10, 5))
+    color_map = {"Spine_1 (eth4)": "tab:purple", "Spine_2 (eth5)": "tab:cyan"}
     
-    all_times = set()
-    data_series = {label: {} for label in rx_files.keys()}
-    
-    for label, fname in rx_files.items():
+    for label, fname in spine_files.items():
+        t_vals, y_vals = [], []
         with open(fname) as f:
             next(f)
             for line in f:
-                t_val, thr = line.split()
-                t_val = float(t_val)
-                all_times.add(t_val)
-                data_series[label][t_val] = float(thr)
-                
-    sorted_times = sorted(list(all_times))
-    
-    y_data = []
-    labels = []
-    colors = []
-    color_map = {"c1": "tab:blue", "c2": "tab:green", "c3": "tab:red", "c4": "tab:orange"}
-    name_map = {"c1": "BLUE", "c2": "GREEN", "c3": "RED", "c4": "YELLOW"}
-    
-    for c in ["c1", "c2", "c3", "c4"]:
-        y = [data_series[c].get(t, 0.0) for t in sorted_times]
-        y_data.append(y)
-        labels.append(f"Training {name_map[c]}")
-        colors.append(color_map[c])
+                t, thr = line.split()
+                t_vals.append(float(t))
+                y_vals.append(float(thr))
         
-    plt.stackplot(sorted_times, y_data, labels=labels, colors=colors, alpha=0.85)
+        # Plotting standard lines instead of stacked areas to explicitly show how the two paths behave
+        plt.plot(t_vals, y_vals, label=f"Path via {label}", color=color_map[label], linewidth=2.5)
+        
+    plt.title("Dynamic Bandwidth Allocation on Bottleneck Links (Leaf 3)")
+    plt.xlabel("Time (Measurement Epoch)")
+    plt.ylabel("Throughput (Mbps)")
     
-    plt.title("Dynamic Bandwidth Allocation (Capacity-Aware Fairness)")
-    plt.xlabel("Time (s)")
-    plt.ylabel("Aggregated Throughput (Mbps)")
-    
-    plt.axhline(y=100, color='black', linestyle='--', linewidth=2, label='Single Link Hardware Limit (100 Mbps)')
+    plt.axhline(y=100, color='red', linestyle='--', linewidth=2, label='Hardware Limit per Link (100 Mbps)')
     
     plt.legend(loc='upper right')
     plt.grid(True, linestyle=':', alpha=0.6)
@@ -321,9 +360,6 @@ def plot_bandwidth_fairness(rx_files):
     plt.show()
 
 def plot_cumulative_data(rx_files):
-    
-    # Purpose: It visualizes the completion of ML cycles as cumulative data ( MB )
-    
     plt.figure(figsize=(10, 4))
     color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
 
@@ -336,7 +372,6 @@ def plot_cumulative_data(rx_files):
             next(f)
             for line in f:
                 t_val, thr_mbps = line.split()
-                # 1 Mbps = 0.125 MB/s. Multiplying by 1 second polling interval
                 mb_transferred = float(thr_mbps) / 8.0 
                 cumulative += mb_transferred
                 t_vals.append(float(t_val))
@@ -345,7 +380,7 @@ def plot_cumulative_data(rx_files):
         plt.plot(t_vals, cum_mb, label=f"Training {t_name}", color=color_map.get(t_name, "tab:blue"), linewidth=2)
 
     plt.title("Cumulative Data Transferred per Training")
-    plt.xlabel("Time (s)")
+    plt.xlabel("Time (Measurement Epoch)")
     plt.ylabel("Cumulative Data (MB)")
     plt.legend()
     plt.grid(True)
@@ -372,7 +407,7 @@ def main():
     monitors = []
 
     # =========================
-    # RX MONITOR (collector)
+    # RX MONITOR (Collectors)
     # =========================
     rx_files = {}
     collectors = set(cfg["collector"] for cfg in TRAININGS)
@@ -387,7 +422,18 @@ def main():
         monitors.append(t)
 
     # =========================
-    # TX MONITOR (workers)
+    # RX MONITOR (Spine Links on l3)
+    # =========================
+    spine_files = {}
+    for iface, name in [("eth4", "Spine_1 (eth4)"), ("eth5", "Spine_2 (eth5)")]:
+        fname = f"l3_{iface}_rx.txt"
+        spine_files[name] = fname
+        t = threading.Thread(target=monitor_l3_spine, args=(iface, cmap, fname, stop_event))
+        t.start()
+        monitors.append(t)
+
+    # =========================
+    # TX MONITOR (Workers)
     # =========================
     tx_files = {}
     workers = set()
@@ -426,8 +472,9 @@ def main():
     plot_collectors(rx_files)
     plot_workers(tx_files)
     
-    # Note: Following instructions are related to the calls for new plots
-    plot_bandwidth_fairness(rx_files)
+    # Adesso passiamo i file degli Spine al grafico della Fairness per mostrare il vero bottleneck
+    plot_bandwidth_fairness(spine_files)
+    
     plot_cumulative_data(rx_files)
 
     print("\n=== DONE ===\n")
