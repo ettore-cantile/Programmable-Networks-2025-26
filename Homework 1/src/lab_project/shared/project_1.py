@@ -417,6 +417,19 @@ class Project_1( object ):
                 data[ "In_Burst" ] = False
                 data[ "Silence_Count" ] = 0
 
+        # Note: If ALL trainings are currently inactive, perform a complete global timer reset
+        # This allows running multiple consecutive experiments without restarting the controller
+        all_inactive = all( data[ "Phase" ] == -1.0 for data in self.trainings.values() )
+        
+        if all_inactive and self.first_burst_detected:
+            self.first_burst_detected = False
+            self.global_start_time = 0.0
+            
+            term_width = shutil.get_terminal_size((85, 15)).columns - 15
+            log.info( "=" * term_width )
+            log.info( "[SYSTEM] ALL EXPERIMENTS CONCLUDED. GLOBAL TIMERS RESET." )
+            log.info( "=" * term_width )
+
     def _handle_FlowStatsReceived( self, event ):
         
         # Purpose: It receives and analyzes OpenFlow statistics to calculate throughput and manage ML cycles
@@ -542,7 +555,7 @@ class Project_1( object ):
                                 
                                 training_data[ "Last_Dv" ] = d_v
 
-                                for worker in active_workers:
+                                for worker in training_data[ "Workers" ]:
                                     if worker in self.assigned_paths:
                                         path, rate = self.assigned_paths[ worker ]
                                         
