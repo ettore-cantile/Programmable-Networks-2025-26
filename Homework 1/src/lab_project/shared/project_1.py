@@ -20,7 +20,7 @@ logging.getLogger( "openflow.discovery" ).setLevel( logging.WARNING )
 log = core.getLogger()
 
 class Project_1( object ):
-    def __init__( self, burst, capacity, collectors, cutoff, hard, inactivity, k, period, stability ):
+    def __init__( self, alpha, burst, capacity, collectors, cutoff, hard, inactivity, k, period, stability, start_phi ):
 
         # Purpose: It initializes the SDN component to orchestrate the ML trainings
 
@@ -57,13 +57,15 @@ class Project_1( object ):
         log.info( "[SYSTEM] Collectors Active: %s", self.collectors )
 
         # Operating parameters
+        self.alpha = float ( alpha )
         self.burst = float( burst ) # the throughput threshold ( Bytes/s ) that triggers the "In_Burst" state, allowing the controller to detect the ML Incast
         self.cutoff = int( cutoff ) # the maximum hop depth allowed when searching for paths via DFS, preventing endless loops in large topologies
         self.hard = int( hard ) # OpenFlow hard timeout ( seconds ). Flow rules expire strictly after this time to force continuous traffic rebalancing
         self.k = int( k ) # the maximum number of redundant paths to compute and cache between any source and destination ( K-Shortest Paths )
         self.period = float( period ) # the polling interval ( seconds ) for the Controller to request traffic statistics from edge switches
-        self.inactivity = inactivity # the absolute silence duration ( seconds ) required to declare a training procedure fully completed and trigger a global reset
-        self.stability = stability
+        self.inactivity = int( inactivity ) # the absolute silence duration ( seconds ) required to declare a training procedure fully completed and trigger a global reset
+        self.stability = int( stability )
+        self.start_phi = float( start_phi )
 
         # Variables to align the "Phase" visually with the traffic generator execution
         self.first_burst_detected = False
@@ -80,7 +82,6 @@ class Project_1( object ):
                 "Total_Accumulated_Bytes": 0, # lifetime counter of bytes sent by this training for the final report before global reset
                 "Duration": 0, # physical duration ( seconds ) of the ongoing burst period
                 "Tv_Period": 0.0, # estimated time interval between the start of consecutive training rounds ( T_v )
-                "Min_Gap": 10000.0, # helper estimator that tracks the smallest valid gap between rounds to stabilize period calculation against congestion
                 "Phase": -1.0, # the time offset ( seconds ) between the global experiment start and the arrival of the first packet for this training
                 "Last_Time": time.time(), # timestamp of the last polling cycle used to calculate the time_difference for throughput
                 "In_Burst": False, # boolean flag indicating if the training is currently in an active Incast state
@@ -409,7 +410,6 @@ class Project_1( object ):
                 data[ "Total_Accumulated_Bytes" ] = 0
                 data[ "Duration" ] = 0
                 data[ "Tv_Period" ] = 0.0
-                data[ "Min_Gap" ] = 10000.0
                 data[ "Phase" ] = -1.0
                 data[ "Current_Burst_Start" ] = 0.0
                 data[ "Last_Real_Round_Start" ] = 0.0
@@ -496,7 +496,7 @@ class Project_1( object ):
                         training_data[ "Current_Burst_Start" ] = current_time
                         
                         if training_data[ "Phase" ] == -1.0:
-                            training_data[ "Phase" ] = current_time - self.global_start_time
+                            training_data[ "Phase" ] = current_time - self.global_start_time + self.start_phi
                         
                         training_data[ "Duration" ] = 0
                         training_data[ "Dv" ] = 0
@@ -529,10 +529,10 @@ class Project_1( object ):
                                 if training_data[ "Last_Real_Round_Start" ] > 0:
                                     gap = training_data[ "Current_Burst_Start" ] - training_data[ "Last_Real_Round_Start" ]
                                     
-                                    if gap < training_data[ "Min_Gap" ]:
-                                        training_data[ "Min_Gap" ] = gap
-
-                                    training_data[ "Tv_Period" ] = training_data[ "Min_Gap" ]
+                                    if training_data[ "Tv_Period" ] == 0.0:
+                                        training_data[ "Tv_Period" ] = gap
+                                    else:
+                                        training_data[ "Tv_Period" ] = ( gap * self.alpha ) + ( training_data[ "Tv_Period" ] * ( 1.0 - self.alpha ) )
                                 
                                 training_data[ "Last_Real_Round_Start" ] = training_data[ "Current_Burst_Start" ]
                                 training_data[ "Round" ] += 1
@@ -541,7 +541,7 @@ class Project_1( object ):
                                 active_workers = list( training_data[ "Active_This_Round" ] )
                                 k_v = len( active_workers )
                                 t_v = training_data[ "Tv_Period" ]
-                                phi_v = training_data[ "Phase" ] + 1.0
+                                phi_v = training_data[ "Phase" ]
 
                                 term_width = shutil.get_terminal_size((85, 15)).columns - 15
                 
@@ -718,8 +718,8 @@ class Project_1( object ):
         msg.actions.append( of.ofp_action_output( port = out_port ) ) 
         connection.send( msg )
 
-def launch( burst = 100000, capacity = 12500000, collectors = "10.0.1.1:Training_Blue,10.0.1.2:Training_Green,10.0.1.3:Training_Red,10.0.1.4:Training_Yellow", cutoff = 3, hard = 0, inactivity = 120, k = 2, period = 1, stability = 15 ):
+def launch( alpha = 0.25, burst = 100000, capacity = 12500000, collectors = "10.0.1.1:Training_Blue,10.0.1.2:Training_Green,10.0.1.3:Training_Red,10.0.1.4:Training_Yellow", cutoff = 3, hard = 0, inactivity = 120, k = 2, period = 1, stability = 15, start_phi = 1.0 ):
     
     # Purpose: It represents the POX entry point. Parameters can be injected using the command line
     
-    core.registerNew( Project_1, burst, capacity, collectors, cutoff, hard, inactivity, k, period, stability )
+    core.registerNew( Project_1, alpha, burst, capacity, collectors, cutoff, hard, inactivity, k, period, stability, start_phi )
