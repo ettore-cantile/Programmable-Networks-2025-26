@@ -690,7 +690,7 @@ class Project_1( object ):
             return
             
         msg = of.ofp_flow_mod() 
-        msg.priority = 65535
+        msg.priority = 100
         msg.match.dl_type = 0x0800 
         msg.match.nw_src = src_ip # Source IP ( Collector )
         msg.match.nw_dst = dst_ip # Destination IP ( Worker )
@@ -709,7 +709,7 @@ class Project_1( object ):
             return
             
         msg = of.ofp_flow_mod() 
-        msg.priority = 65535 
+        msg.priority = 100 
         msg.match.dl_type = 0x0800 
         msg.match.nw_src = src_ip # Source IP ( Worker )
         msg.match.nw_dst = dst_ip # Destination IP ( Collector )
