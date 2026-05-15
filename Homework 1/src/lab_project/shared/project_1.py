@@ -54,7 +54,7 @@ class Project_1( object ):
                 ip, name = item.split( ":" )
                 self.collectors[ ip ] = name.replace( "Training_", "" ).upper() # pre-formatting name for clean logs
         
-        log.info( "[SYSTEM] Collectors Active: %s", self.collectors )
+        log.info( "[SYSTEM] Collectors: %s", self.collectors )
 
         # Operating parameters
         self.alpha = float ( alpha )
@@ -89,7 +89,8 @@ class Project_1( object ):
                 "Round": 0, # counter of successfully completed ML training cycles
                 "Current_Burst_Start": 0.0, # temporary anchor storing the exact timestamp when the ongoing burst was first detected
                 "Last_Real_Round_Start": 0.0, # persistent anchor storing the start timestamp of the last validated ML round to compute "Tv_Period"
-                "Last_Activity_Time": time.time() # timestamp of the absolute last packet seen for this training, used to trigger the inactivity-based global reset
+                "Last_Activity_Time": time.time(), # timestamp of the absolute last packet seen for this training, used to trigger the inactivity-based global reset
+                "First_Packet_Time": 0.0 # exact timestamp of the first packet ( SYN ) detected via PacketIn, used for "Phase" calculation
             } for collector in self.collectors
         }
 
@@ -351,6 +352,14 @@ class Project_1( object ):
                 training_data = self.trainings[ dst_ip ]
                 t_name = self.collectors[ dst_ip ]
 
+                # Recording the timestamp to the millisecond of the very first packet ever
+                if training_data[ "First_Packet_Time" ] == 0.0:
+                    training_data[ "First_Packet_Time" ] = time.time()
+
+                    # If this is the very first packet in the entire experiment, initialize time zero
+                    if self.global_start_time == 0.0:
+                        self.global_start_time = time.time()
+
                 # the relative worker must be inserted ( if not previously done )
                 if src_ip not in training_data[ "Workers" ]:
                     training_data[ "Workers" ].add( src_ip )
@@ -416,6 +425,7 @@ class Project_1( object ):
                 data[ "Last_Activity_Time" ] = current_time
                 data[ "In_Burst" ] = False
                 data[ "Silence_Count" ] = 0
+                data[ "First_Packet_Time" ] = 0.0
 
         # Note: If ALL trainings are currently inactive, perform a complete global timer reset
         # This allows running multiple consecutive experiments without restarting the controller
@@ -427,7 +437,7 @@ class Project_1( object ):
             
             term_width = shutil.get_terminal_size((85, 15)).columns - 15
             log.info( "=" * term_width )
-            log.info( "[SYSTEM] ALL EXPERIMENTS CONCLUDED. GLOBAL TIMERS RESET." )
+            log.info( "[SYSTEM] ALL EXPERIMENTS ARE CONCLUDED. GLOBAL TIMERS RESET." )
             log.info( "=" * term_width )
 
     def _handle_FlowStatsReceived( self, event ):
@@ -491,13 +501,12 @@ class Project_1( object ):
                         
                         if not self.first_burst_detected:
                             self.first_burst_detected = True
-                            self.global_start_time = current_time
 
                         training_data[ "Current_Burst_Start" ] = current_time
                         
                         if training_data[ "Phase" ] == -1.0:
-                            training_data[ "Phase" ] = current_time - self.global_start_time + self.start_phi
-                        
+                            training_data[ "Phase" ] = ( training_data[ "First_Packet_Time" ] - self.global_start_time ) + self.start_phi
+
                         training_data[ "Duration" ] = 0
                         training_data[ "Dv" ] = 0
                         training_data[ "Active_This_Round" ].clear()
@@ -548,11 +557,11 @@ class Project_1( object ):
                 
                                 log.info( "-" * term_width )
                                 log.info( "[%s] ROUND %d COMPLETED", t_name, current_round )
-                                log.info( "[%s] Workers (K_v) : %d -> %s", t_name, k_v, active_workers )
-                                log.info( "[%s] Volume (D_v)  : %.2f MB", t_name, d_v_mb ) 
-                                log.info( "[%s] Period (T_v)  : %.2f sec", t_name, t_v )
-                                log.info( "[%s] Phase (Phi_v) : %.2f sec", t_name, phi_v )
-                                log.info( "[%s] Completion Time    : %.2f sec", t_name, duration )
+                                log.info( "[%s] Workers (K_v): %d -> %s", t_name, k_v, active_workers )
+                                log.info( "[%s] Volume (D_v): %.2f MB", t_name, d_v_mb ) 
+                                log.info( "[%s] Period (T_v): %.2f sec", t_name, t_v )
+                                log.info( "[%s] Phase (Phi_v): %.2f sec", t_name, phi_v )
+                                log.info( "[%s] Completion Time: %.2f sec", t_name, duration )
                                 log.info( "-" * term_width )
                                 
                                 training_data[ "Last_Dv" ] = d_v
@@ -618,29 +627,38 @@ class Project_1( object ):
         if src_ip in self.assigned_paths:
             selected_path = self.assigned_paths[ src_ip ][ 0 ]
         else:
-            active_set = training_data.get( "Active_This_Round", set() )
-            K_v = len( active_set ) if len( active_set ) > 0 else len( training_data.get( "Workers", set() ) )
-            K_v = max( 1, K_v )
+            is_bootstrap = ( training_data.get( "Round", 0 ) == 0 )
             
-            worker_expected_rate = self.capacity / float( K_v )
-            selected_path = k_paths[ 0 ]
-            min_bottleneck = float( "inf" )
-            
-            # Finding the least saturated path virtually
-            for path in k_paths:
-                path_bottleneck = 0.0
-
-                for i in range( len( path ) - 1 ):
-                    edge = ( path[ i ], path[ i + 1 ] )
-                    current_load = self.link_allocated_rate.get( edge, 0.0 )
-                    saturation = ( ( current_load + worker_expected_rate ) / float( self.capacity ) ) * 100
-                    
-                    if saturation > path_bottleneck: 
-                        path_bottleneck = saturation
+            if is_bootstrap:
+                # Using a simple Round-Robin based on the number of workers discovered so far
+                num_workers_seen = len( training_data.get( "Workers", set() ) )
+                selected_path = k_paths[ num_workers_seen % len( k_paths ) ]
+                worker_expected_rate = 0.0
+            else:
+                # Starting from "ROUND 2" the true "Capacity-Aware" mechanism is applied
+                active_set = training_data.get( "Active_This_Round", set() )
+                K_v = len( active_set ) if len( active_set ) > 0 else len( training_data.get( "Workers", set() ) )
+                K_v = max( 1, K_v )
                 
-                if path_bottleneck < min_bottleneck:
-                    min_bottleneck = path_bottleneck
-                    selected_path = path
+                worker_expected_rate = self.capacity / float( K_v )
+                selected_path = k_paths[ 0 ]
+                min_bottleneck = float( "inf" )
+                
+                # Finding the least saturated path virtually
+                for path in k_paths:
+                    path_bottleneck = 0.0
+
+                    for i in range( len( path ) - 1 ):
+                        edge = ( path[ i ], path[ i + 1 ] )
+                        current_load = self.link_allocated_rate.get( edge, 0.0 )
+                        saturation = ( ( current_load + worker_expected_rate ) / float( self.capacity ) ) * 100
+                        
+                        if saturation > path_bottleneck: 
+                            path_bottleneck = saturation
+                    
+                    if path_bottleneck < min_bottleneck:
+                        min_bottleneck = path_bottleneck
+                        selected_path = path
 
             # Updating the network balance
             for i in range( len( selected_path ) - 1 ):
@@ -650,7 +668,10 @@ class Project_1( object ):
             self.assigned_paths[ src_ip ] = ( selected_path, worker_expected_rate )
             hex_path = [ dpid_to_str( node ) for node in selected_path ]
             
-            log.info( "[%s] ROUTING | %s -> %s | Path: %s | Saturation: %5.2f%%", t_name, src_ip, dst_ip, hex_path, min_bottleneck )
+            if is_bootstrap:
+                log.info( "[%s] ROUTING | %s -> %s | Path: %s", t_name, src_ip, dst_ip, hex_path )
+            else:
+                log.info( "[%s] ROUTING | %s -> %s | Path: %s | Saturation: %5.2f%%", t_name, src_ip, dst_ip, hex_path, min_bottleneck )
 
         # The function ends with:
         # -) installing ofp_flow_mod along all intermediate nodes of the route
