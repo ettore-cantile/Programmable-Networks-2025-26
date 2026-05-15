@@ -542,6 +542,7 @@ class Project_1( object ):
                                 k_v = len( active_workers )
                                 t_v = training_data[ "Tv_Period" ]
                                 phi_v = training_data[ "Phase" ]
+                                duration= training_data[ "Duration" ]
 
                                 term_width = shutil.get_terminal_size((85, 15)).columns - 15
                 
@@ -551,6 +552,7 @@ class Project_1( object ):
                                 log.info( "[%s] Volume (D_v)  : %.2f MB", t_name, d_v_mb ) 
                                 log.info( "[%s] Period (T_v)  : %.2f sec", t_name, t_v )
                                 log.info( "[%s] Phase (Phi_v) : %.2f sec", t_name, phi_v )
+                                log.info( "[%s] Completion Time    : %.2f sec", t_name, duration )
                                 log.info( "-" * term_width )
                                 
                                 training_data[ "Last_Dv" ] = d_v
