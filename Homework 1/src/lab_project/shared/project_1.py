@@ -551,7 +551,7 @@ class Project_1( object ):
                                 k_v = len( active_workers )
                                 t_v = training_data[ "Tv_Period" ]
                                 phi_v = training_data[ "Phase" ]
-                                duration= training_data[ "Duration" ]
+                                duration = max(0.0, training_data[ "Duration" ] - (required_silence * self.period))
 
                                 term_width = shutil.get_terminal_size((85, 15)).columns - 15
                 

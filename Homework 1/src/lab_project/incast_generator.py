@@ -364,18 +364,42 @@ def plot_cumulative_data(rx_files):
     color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
 
     for label, fname in rx_files.items():
-        t_name = [cfg["name"].upper() for cfg in TRAININGS if cfg["collector"] == label][0]
-        t_vals, cum_mb = [], []
-        cumulative = 0.0
+        cfg = [c for c in TRAININGS if c["collector"] == label][0]
+        t_name = cfg["name"].upper()
         
+        # 1. Calcolo del Volume Teorico Reale (es. 250 MB)
+        expected_mb = (cfg["D"] * len(cfg["senders"]) * cfg["cycles"]) / 8.0
+        
+        # 2. Prima passata: contiamo quanto volume "falsato" dal lag è stato registrato
+        fake_total_mb = 0.0
         with open(fname) as f:
             next(f)
             for line in f:
-                t_val, thr_mbps = line.split()
-                mb_transferred = float(thr_mbps) / 8.0 
-                cumulative += mb_transferred
-                t_vals.append(float(t_val))
-                cum_mb.append(cumulative)
+                parts = line.split()
+                if len(parts) >= 2:
+                    fake_total_mb += float(parts[1]) / 8.0
+                    
+        # 3. Calcolo del fattore di recupero
+        scale_factor = expected_mb / fake_total_mb if fake_total_mb > 0 else 1.0
+        
+        t_vals, cum_mb = [], []
+        cumulative = 0.0
+        
+        # 4. Seconda passata: Disegniamo la curva scalata
+        with open(fname) as f:
+            next(f)
+            for line in f:
+                parts = line.split()
+                if len(parts) >= 2:
+                    t_val = float(parts[0])
+                    thr_mbps = float(parts[1])
+                    
+                    # Moltiplichiamo per il fattore di scala per recuperare i secondi persi
+                    real_mb_transferred = (thr_mbps / 8.0) * scale_factor
+                    cumulative += real_mb_transferred
+                    
+                    t_vals.append(t_val)
+                    cum_mb.append(cumulative)
                 
         plt.plot(t_vals, cum_mb, label=f"Training {t_name}", color=color_map.get(t_name, "tab:blue"), linewidth=2)
 
@@ -386,7 +410,6 @@ def plot_cumulative_data(rx_files):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
 # =========================
 # MAIN
 # =========================
