@@ -12,7 +12,7 @@ ALPHA = 1.5
 BASE_PORT = 5000
 
 # =========================
-# CONFIG TRAINING (Volumi Identici & Congestione Controllata)
+# CONFIG TRAINING 
 # =========================
 TRAININGS = [
     {
@@ -20,9 +20,9 @@ TRAININGS = [
         "senders": ["w1","w2","w3","w4","w5","w6","w7","w8","w9","w10"], # 10 Workers
         "collector": "c1",
         "collector_ip": "10.0.1.1",
-        "D": 48,   # 48 Mbit * 10 = 480 Mbit -> 60 MB Totali
-        "T": 30,   # Periodo 30s
-        "phi": 5,  # Partenza t=5
+        "D": 48,   # 48 Mbit * 10 = 480 Mbit -> 60 MB 
+        "T": 30,   # Period 30s
+        "phi": 5,  # Phi t=5
         "cycles": 4
     },
     {
@@ -30,9 +30,9 @@ TRAININGS = [
         "senders": ["w11","w12","w13","w14","w15","w16","w17","w18"],     # 8 Workers
         "collector": "c2",
         "collector_ip": "10.0.1.2",
-        "D": 60,   # 60 Mbit * 8 = 480 Mbit -> 60 MB Totali
-        "T": 40,   # Periodo 40s
-        "phi": 10, # Partenza t=10
+        "D": 60,   # 60 Mbit * 8 = 480 Mbit -> 60 MB 
+        "T": 40,   # Period 40s
+        "phi": 10, # Phi t=10
         "cycles": 4
     },
     {
@@ -40,9 +40,9 @@ TRAININGS = [
         "senders": ["w19","w20","w21","w22","w23","w24"],                 # 6 Workers
         "collector": "c3",
         "collector_ip": "10.0.1.3",
-        "D": 80,   # 80 Mbit * 6 = 480 Mbit -> 60 MB Totali
-        "T": 35,   # Periodo 35s
-        "phi": 15, # Partenza t=15
+        "D": 80,   # 80 Mbit * 6 = 480 Mbit -> 60 MB 
+        "T": 35,   # Period 35s
+        "phi": 15, # Phi t=15
         "cycles": 4
     },
     {
@@ -50,9 +50,9 @@ TRAININGS = [
         "senders": ["w25","w26","w27","w28"],                             # 4 Workers
         "collector": "c4",
         "collector_ip": "10.0.1.4",
-        "D": 120,  # 120 Mbit * 4 = 480 Mbit -> 60 MB Totali
-        "T": 45,   # Periodo 45s
-        "phi": 20, # Partenza t=20
+        "D": 120,  # 120 Mbit * 4 = 480 Mbit -> 60 MB 
+        "T": 45,   # Period 45s
+        "phi": 20, # Phi t=20
         "cycles": 4
     }
 ]
@@ -348,10 +348,8 @@ def plot_cumulative_data(rx_files):
         cfg = [c for c in TRAININGS if c["collector"] == label][0]
         t_name = cfg["name"].upper()
         
-        # 1. Calcolo del Volume Teorico Reale (es. 250 MB)
         expected_mb = (cfg["D"] * len(cfg["senders"]) * cfg["cycles"]) / 8.0
         
-        # 2. Prima passata: contiamo quanto volume "falsato" dal lag è stato registrato
         fake_total_mb = 0.0
         with open(fname) as f:
             next(f)
@@ -360,13 +358,11 @@ def plot_cumulative_data(rx_files):
                 if len(parts) >= 2:
                     fake_total_mb += float(parts[1]) / 8.0
                     
-        # 3. Calcolo del fattore di recupero
         scale_factor = expected_mb / fake_total_mb if fake_total_mb > 0 else 1.0
         
         t_vals, cum_mb = [], []
         cumulative = 0.0
         
-        # 4. Seconda passata: Disegniamo la curva scalata
         with open(fname) as f:
             next(f)
             for line in f:
@@ -375,7 +371,6 @@ def plot_cumulative_data(rx_files):
                     t_val = float(parts[0])
                     thr_mbps = float(parts[1])
                     
-                    # Moltiplichiamo per il fattore di scala per recuperare i secondi persi
                     real_mb_transferred = (thr_mbps / 8.0) * scale_factor
                     cumulative += real_mb_transferred
                     
