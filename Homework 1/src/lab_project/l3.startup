@@ -5,11 +5,11 @@ ip addr add 20.0.1.3/24 dev eth6
 /usr/share/openvswitch/scripts/ovs-ctl --system-id=random start
 ovs-vsctl add-br l3
 
-# Configuring interfaces with aligned OVS Ingress Policing (100000 kbps = 100 Mbps, 400 kb = 50000 Bytes)
+# Configuring interfaces with aligned OVS Ingress Policing
 for i in 0 1 2 3 4 5; do
     ovs-vsctl add-port l3 eth$i
     ovs-vsctl set interface eth$i ingress_policing_rate=100000
-    ovs-vsctl set interface eth$i ingress_policing_burst=400
+    ovs-vsctl set interface eth$i ingress_policing_burst=1000
 done
 
 ovs-vsctl set bridge l3 other-config:datapath-id=0000000000000013

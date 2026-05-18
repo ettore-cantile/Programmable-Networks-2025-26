@@ -57,6 +57,17 @@ TRAININGS = [
     }
 ]
 
+GLOBAL_COLOR_MAP = {
+    "BLUE": "tab:blue",
+    "GREEN": "tab:green",
+    "RED": "tab:red",
+    "YELLOW": "tab:orange", 
+    "c1": "tab:blue",
+    "c2": "tab:green",
+    "c3": "tab:red",
+    "c4": "tab:orange"
+}
+
 # =========================
 # UTILS
 # =========================
@@ -89,6 +100,7 @@ def get_worker_port(worker):
 # =========================
 def start_servers(cmap):
     used_ports = set()
+
     for cfg in TRAININGS:
         for w in cfg["senders"]:
             port = get_worker_port(w)
@@ -98,6 +110,7 @@ def start_servers(cmap):
                             ["iperf3", "-s", "-D", "-p", str(port)],
                             cmap)
                 used_ports.add(port)
+
 
 # =========================
 # CLIENT
@@ -118,117 +131,139 @@ def start_client(worker, target_ip, port, D_mbit, f_v, cmap):
 
     docker_exec(worker, ["bash", "-c", cmd], cmap)
 
+
 # =========================
 # MONITOR RX (Collectors)
 # =========================
-def get_rx(node, cmap):
-    r = subprocess.run(
-        ["docker", "exec", cmap[node],
-         "cat", "/sys/class/net/eth0/statistics/rx_bytes"],
-        capture_output=True, text=True
-    )
-    return int(r.stdout.strip() or 0)
-
 def monitor_rx(node, cmap, logfile, stop_event):
     print(f"[MONITOR RX] {node}")
-    prev = get_rx(node, cmap)
-    last_time = time.time()  
-    t = 0
+    bash_cmd = 'while true; do echo "$(date +%s.%N) $(cat /sys/class/net/eth0/statistics/rx_bytes 2>/dev/null)"; sleep 1; done'
+    process = subprocess.Popen(
+        ["docker", "exec", cmap[node], "sh", "-c", bash_cmd],
+        stdout=subprocess.PIPE, text=True
+    )
+
+    start_time = None
+    prev_time = None
+    prev_bytes = None
 
     with open(logfile, "w") as f:
         f.write("time throughput_mbps\n")
-        while not stop_event.is_set():
-            time.sleep(1)
-            curr = get_rx(node, cmap)
-            curr_time = time.time()
-            
-            dt = curr_time - last_time
-            if dt > 0:
-                thr = (curr - prev) * 8 / (1e6 * dt)
-            else:
-                thr = 0.0
+        for line in iter(process.stdout.readline, ''):
+            if stop_event.is_set():
+                break
+            parts = line.split()
+            if len(parts) != 2: continue
                 
-            t += 1 
-            f.write(f"{t} {thr}\n")
+            curr_time = float(parts[0])
+            curr_bytes = int(parts[1])
+
+            if start_time is None:
+                start_time = curr_time
+                prev_time = curr_time
+                prev_bytes = curr_bytes
+                continue
+
+            dt = curr_time - prev_time
+            elapsed_time = curr_time - start_time
+            thr = (curr_bytes - prev_bytes) * 8 / (1e6 * dt) if dt > 0 else 0.0
+
+            # Salviamo l'elapsed time reale e il throughput puro
+            f.write(f"{elapsed_time:.2f} {thr}\n")
             f.flush()
-            
-            prev = curr
-            last_time = curr_time
+
+            prev_time = curr_time
+            prev_bytes = curr_bytes
+
+    process.terminate()
 
 # =========================
 # MONITOR SPINE LINKS (L3)
 # =========================
 def monitor_l3_spine(interface, cmap, logfile, stop_event):
     print(f"[MONITOR SPINE] l3 interface {interface}")
-    
-    def get_spine_rx():
-        r = subprocess.run(
-            ["docker", "exec", cmap.get("l3", ""),
-             "cat", f"/sys/class/net/{interface}/statistics/rx_bytes"],
-            capture_output=True, text=True
-        )
-        return int(r.stdout.strip() or 0)
-        
-    prev = get_spine_rx()
-    last_time = time.time()
-    t = 0
-    
+    bash_cmd = f'while true; do echo "$(date +%s.%N) $(cat /sys/class/net/{interface}/statistics/rx_bytes 2>/dev/null)"; sleep 1; done'
+    process = subprocess.Popen(
+        ["docker", "exec", cmap.get("l3", ""), "sh", "-c", bash_cmd],
+        stdout=subprocess.PIPE, text=True
+    )
+
+    start_time = None
+    prev_time = None
+    prev_bytes = None
+
     with open(logfile, "w") as f:
         f.write("time throughput_mbps\n")
-        while not stop_event.is_set():
-            time.sleep(1)
-            curr = get_spine_rx()
-            curr_time = time.time()
-            
-            dt = curr_time - last_time
-            if dt > 0:
-                thr = (curr - prev) * 8 / (1e6 * dt)
-            else:
-                thr = 0.0
+        for line in iter(process.stdout.readline, ''):
+            if stop_event.is_set():
+                break
+            parts = line.split()
+            if len(parts) != 2: continue
                 
-            t += 1
-            f.write(f"{t} {thr}\n")
+            curr_time = float(parts[0])
+            curr_bytes = int(parts[1])
+
+            if start_time is None:
+                start_time = curr_time
+                prev_time = curr_time
+                prev_bytes = curr_bytes
+                continue
+
+            dt = curr_time - prev_time
+            elapsed_time = curr_time - start_time
+            thr = (curr_bytes - prev_bytes) * 8 / (1e6 * dt) if dt > 0 else 0.0
+
+            f.write(f"{elapsed_time:.2f} {thr}\n")
             f.flush()
-            
-            prev = curr
-            last_time = curr_time
+
+            prev_time = curr_time
+            prev_bytes = curr_bytes
+
+    process.terminate()
 
 # =========================
 # MONITOR TX (Workers)
 # =========================
-def get_tx(node, cmap):
-    r = subprocess.run(
-        ["docker", "exec", cmap[node],
-         "cat", "/sys/class/net/eth0/statistics/tx_bytes"],
-        capture_output=True, text=True
-    )
-    return int(r.stdout.strip() or 0)
-
 def monitor_tx(node, cmap, logfile, stop_event):
     print(f"[MONITOR TX] {node}")
-    prev = get_tx(node, cmap)
-    last_time = time.time()  
-    t = 0
+    bash_cmd = 'while true; do echo "$(date +%s.%N) $(cat /sys/class/net/eth0/statistics/tx_bytes 2>/dev/null)"; sleep 1; done'
+    process = subprocess.Popen(
+        ["docker", "exec", cmap[node], "sh", "-c", bash_cmd],
+        stdout=subprocess.PIPE, text=True
+    )
+
+    start_time = None
+    prev_time = None
+    prev_bytes = None
 
     with open(logfile, "w") as f:
         f.write("time throughput_mbps\n")
-        while not stop_event.is_set():
-            time.sleep(1)
-            curr = get_tx(node, cmap)
-            curr_time = time.time()
-            
-            dt = curr_time - last_time
-            if dt > 0:
-                thr = (curr - prev) * 8 / (1e6 * dt)
-            else:
-                thr = 0.0
+        for line in iter(process.stdout.readline, ''):
+            if stop_event.is_set():
+                break
+            parts = line.split()
+            if len(parts) != 2: continue
                 
-            t += 1
-            f.write(f"{t} {thr}\n")
+            curr_time = float(parts[0])
+            curr_bytes = int(parts[1])
+
+            if start_time is None:
+                start_time = curr_time
+                prev_time = curr_time
+                prev_bytes = curr_bytes
+                continue
+
+            dt = curr_time - prev_time
+            elapsed_time = curr_time - start_time
+            thr = (curr_bytes - prev_bytes) * 8 / (1e6 * dt) if dt > 0 else 0.0
+
+            f.write(f"{elapsed_time:.2f} {thr}\n")
             f.flush()
-            
-            prev = curr
-            last_time = curr_time
+
+            prev_time = curr_time
+            prev_bytes = curr_bytes
+
+    process.terminate()
 
 # =========================
 # TRAINING
@@ -258,11 +293,13 @@ def run_training(cfg, cmap):
 
     print(f"[{name}] DONE")
 
+
 # =========================
 # PLOT
 # =========================
 def plot_collectors(files):
-    plt.figure()
+    plt.figure(figsize=(10, 4))
+    label_mapping = {"c1": "Training BLUE (c1)", "c2": "Training GREEN (c2)", "c3": "Training RED (c3)", "c4": "Training YELLOW (c4)"}
     for label, fname in files.items():
         t, y = [], []
         with open(fname) as f:
@@ -271,48 +308,68 @@ def plot_collectors(files):
                 a, b = line.split()
                 t.append(float(a))
                 y.append(float(b))
-        plt.plot(t, y, label=label)
+                
+        plot_color = GLOBAL_COLOR_MAP.get(label, "tab:gray")
+        clean_label = label_mapping.get(label, label)
+        plt.plot(t, y, label=clean_label, color=plot_color, linewidth=2)
 
     plt.title("Collector RX")
-    plt.xlabel("Time")
+    plt.xlabel("Time (Seconds)")
     plt.ylabel("Mbps")
     plt.legend()
-    plt.grid()
+    plt.grid(True)
+    plt.tight_layout()
     plt.show()
 
 def plot_workers(files):
     n = len(TRAININGS)
     fig, axes = plt.subplots(n, 1, figsize=(10, 3*n), sharex=True)
-
     if n == 1:
         axes = [axes]
 
     for ax, cfg in zip(axes, TRAININGS):
         t_name = cfg["name"].upper()
-        agg_data = {}
-
+        
+        worker_binned = {}
         for w in cfg["senders"]:
             if w in files:
+                worker_binned[w] = {}
+                temp_bins = {}
                 with open(files[w]) as f:
                     next(f)
                     for line in f:
                         t_val, thr = line.split()
-                        t_val = float(t_val)
+                        t_int = int(round(float(t_val)))
                         thr = float(thr)
-                        agg_data[t_val] = agg_data.get(t_val, 0.0) + thr
+                        
+                        if t_int not in temp_bins:
+                            temp_bins[t_int] = []
+                        temp_bins[t_int].append(thr)
+                
+                for t_int, thrs in temp_bins.items():
+                    worker_binned[w][t_int] = sum(thrs) / len(thrs)
 
-        sorted_times = sorted(agg_data.keys())
-        sorted_thrs = [agg_data[t] for t in sorted_times]
+        all_times = set()
+        for w in worker_binned:
+            all_times.update(worker_binned[w].keys())
+            
+        sorted_times = sorted(list(all_times))
+        sorted_thrs = []
+        
+        for t in sorted_times:
+            total_thr = 0.0
+            for w in cfg["senders"]:
+                if w in worker_binned:
+                    total_thr += worker_binned[w].get(t, 0.0)
+            sorted_thrs.append(total_thr)
 
-        color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
-        plot_color = color_map.get(t_name, "tab:blue")
-
+        plot_color = GLOBAL_COLOR_MAP.get(t_name, "tab:gray")
         ax.plot(sorted_times, sorted_thrs, color=plot_color, linewidth=2)
         ax.set_title(f"Aggregated Worker TX - Training {t_name}")
         ax.set_ylabel("Total Mbps")
         ax.grid(True)
 
-    axes[-1].set_xlabel("Time (Measurement Epoch)")
+    axes[-1].set_xlabel("Time (Real Seconds)")
     plt.tight_layout()
     plt.show()
 
@@ -332,7 +389,7 @@ def plot_bandwidth_fairness(spine_files):
         plt.plot(t_vals, y_vals, label=f"Path via {label}", color=color_map[label], linewidth=2.5)
         
     plt.title("Dynamic Bandwidth Allocation on Bottleneck Links (Leaf 3)")
-    plt.xlabel("Time (Measurement Epoch)")
+    plt.xlabel("Time (Seconds)")
     plt.ylabel("Throughput (Mbps)")
     plt.axhline(y=100, color='red', linestyle='--', linewidth=2, label='Hardware Limit per Link (100 Mbps)')
     plt.legend(loc='upper right')
@@ -342,7 +399,6 @@ def plot_bandwidth_fairness(spine_files):
 
 def plot_cumulative_data(rx_files):
     plt.figure(figsize=(10, 4))
-    color_map = {"BLUE": "tab:blue", "GREEN": "tab:green", "RED": "tab:red", "YELLOW": "tab:orange"}
 
     for label, fname in rx_files.items():
         cfg = [c for c in TRAININGS if c["collector"] == label][0]
@@ -377,16 +433,17 @@ def plot_cumulative_data(rx_files):
                     t_vals.append(t_val)
                     cum_mb.append(cumulative)
                 
-        plt.plot(t_vals, cum_mb, label=f"Training {t_name}", color=color_map.get(t_name, "tab:blue"), linewidth=2)
+        plot_color = GLOBAL_COLOR_MAP.get(t_name, "tab:gray")
+        plt.plot(t_vals, cum_mb, label=f"Training {t_name}", color=plot_color, linewidth=2)
 
     plt.title("Cumulative Data Transferred per Training")
-    plt.xlabel("Time (Measurement Epoch)")
+    plt.xlabel("Time (Seconds)")
     plt.ylabel("Cumulative Data (MB)")
-    plt.legend()
+    plt.legend(loc='upper left')
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
+    
 # =========================
 # MAIN
 # =========================
@@ -394,11 +451,13 @@ def main():
     print("\n=== START ===\n")
 
     cmap = get_container_map()
+
     for k, v in cmap.items():
         print(k, "->", v)
 
     print("\nStarting servers...")
     start_servers(cmap)
+
     time.sleep(2)
 
     stop_event = threading.Event()
@@ -409,10 +468,13 @@ def main():
     # =========================
     rx_files = {}
     collectors = set(cfg["collector"] for cfg in TRAININGS)
+
     for c in collectors:
         fname = f"{c}_rx.txt"
         rx_files[c] = fname
-        t = threading.Thread(target=monitor_rx, args=(c, cmap, fname, stop_event))
+
+        t = threading.Thread(target=monitor_rx,
+                             args=(c, cmap, fname, stop_event))
         t.start()
         monitors.append(t)
 
@@ -434,9 +496,11 @@ def main():
     workers = set()
     for cfg in TRAININGS:
         workers.update(cfg["senders"])
+
     for w in workers:
         fname = f"{w}_tx.txt"
         tx_files[w] = fname
+
         t = threading.Thread(target=monitor_tx, args=(w, cmap, fname, stop_event))
         t.start()
         monitors.append(t)
@@ -446,6 +510,7 @@ def main():
     # =========================
     print("\nStarting traffic...")
     threads = []
+
     for cfg in TRAININGS:
         t = threading.Thread(target=run_training, args=(cfg, cmap))
         t.start()
@@ -455,13 +520,16 @@ def main():
         t.join()
 
     stop_event.set()
+
     for t in monitors:
         t.join()
 
     print("\nPlotting...")
     plot_collectors(rx_files)
     plot_workers(tx_files)
+    
     plot_bandwidth_fairness(spine_files)
+    
     plot_cumulative_data(rx_files)
 
     print("\n=== DONE ===\n")
