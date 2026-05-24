@@ -79,13 +79,13 @@ Once the experiments are concluded and the performance graphs have been successf
 
 ---
 
-### ⚠️ Important Note for Windows / MacOS Users
+### ⚠️ Important Note for Windows Users
 
 This network laboratory framework was natively developed, optimized, and validated on a **native Linux distribution ( Ubuntu )**. 
 
-If you or your evaluator execute this laboratory inside **Windows ( WSL2 )** or **MacOS ( Docker Desktop )**, a critical kernel-level virtualization issue will arise: the switches will fail to connect or maintain stability with the POX controller ( `is_connected: true` will not be achieved ).
+If you or your evaluator execute this laboratory inside **Windows ( WSL2, Docker Desktop )**, a critical kernel-level virtualization issue will arise: the switches will fail to connect or maintain stability with the POX controller ( `is_connected: true` will not be achieved ).
 
-* **The Cause:** This failure stems from an environment-specific bug involving **TCP Checksum Offloading** inside virtualized hypervisor networks ( such as Microsoft's WSL2 kernel or Docker's LinuxKit proxy layer on MacOS ). The virtual network stack miscalculates the TCP checksum sequence for OpenFlow protocol packets, forcing the POX controller to reject them silently as corrupted traffic. Moreover, in some environments, the required tunnel device node ( `/dev/net/tun` ) is not automatically created, preventing Open vSwitch from creating virtual cables.
+* **The Cause:** This failure stems from an environment-specific bug involving **TCP Checksum Offloading** inside virtualized hypervisor networks ( such as Microsoft's WSL2 kernel or Docker's LinuxKit proxy layer ). The virtual network stack miscalculates the TCP checksum sequence for OpenFlow protocol packets, forcing the POX controller to reject them silently as corrupted traffic. Moreover, in some environments, the required tunnel device node ( `/dev/net/tun` ) is not automatically created, preventing Open vSwitch from creating virtual cables.
 
 * **Linux Virtual Machines:** Executing this laboratory within a full hardware-emulated Virtual Machine ( e.g., Oracle VirtualBox or VMware ) running a Linux guest OS does not present these anomalies. These hypervisors emulate complete hardware components and utilize a pure native Linux kernel, which correctly calculates packet checksums.
 
