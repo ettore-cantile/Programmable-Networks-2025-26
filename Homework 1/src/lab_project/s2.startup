@@ -5,7 +5,7 @@ ip addr add 20.0.1.7/24 dev eth5
 /usr/share/openvswitch/scripts/ovs-ctl --system-id=random start
 ovs-vsctl add-br s2
 
-# Configuring interfaces with aligned OVS Ingress Policing (100000 kbps = 100 Mbps
+# Configuring interfaces with aligned OVS Ingress Policing
 for i in 0 1 2 3 4; do
     ovs-vsctl add-port s2 eth$i
     ovs-vsctl set interface eth$i ingress_policing_rate=100000
