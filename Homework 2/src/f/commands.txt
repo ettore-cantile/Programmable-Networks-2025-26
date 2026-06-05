@@ -1,0 +1,2 @@
+table_add ipv4_lpm ipv4_forward 10.0.1.0/24 => 00:00:00:00:0B:03 1
+table_add ipv4_lpm ipv4_forward 10.0.3.0/24 => 00:00:00:00:08:02 4

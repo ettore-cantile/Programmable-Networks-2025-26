@@ -1,0 +1,13 @@
+# Assign MAC addresses to interfaces using ip link
+ip link set dev eth0 address 00:00:00:00:0B:00
+ip link set dev eth1 address 00:00:00:00:0B:01
+ip link set dev eth2 address 00:00:00:00:0B:02
+ip link set dev eth3 address 00:00:00:00:0B:03
+
+p4c /shared/project_2.p4
+simple_switch -i 1@eth0 -i 2@eth1 -i 3@eth2 -i 4@eth3 /project_2.json &
+
+while [[ $(pgrep simple_switch) -eq 0 ]]; do sleep 1; done
+until simple_switch_CLI <<< "help" > /dev/null 2>&1; do sleep 1; done
+
+simple_switch_CLI < /commands.txt

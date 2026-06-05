@@ -1,0 +1,10 @@
+# Assign MAC address to the interface connected to SFF1 (Node D) using ip link
+ip link set dev eth0 address 00:00:00:00:F2:00
+
+p4c /shared/project_2.p4
+simple_switch -i 1@eth0 /project_2.json &
+
+while [[ $(pgrep simple_switch) -eq 0 ]]; do sleep 1; done
+until simple_switch_CLI <<< "help" > /dev/null 2>&1; do sleep 1; done
+
+simple_switch_CLI < /commands.txt
