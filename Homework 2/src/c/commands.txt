@@ -1,3 +1,7 @@
-table_add ipv4_lpm ipv4_forward 10.0.1.0/24 => 00:00:00:00:0A:00 1
-table_add ipv4_lpm ipv4_forward 10.0.2.0/24 => 00:00:00:00:0A:00 1
-table_add ipv4_lpm ipv4_forward 10.0.4.0/24 => 00:00:00:00:07:00 4
+table_add mpls_exact mpls_forward 20 => 00:00:00:00:00:e1 3
+table_add mpls_exact mpls_forward 40 => 00:00:00:00:00:b2 2
+
+table_add mpls_exact mpls_forward 30 => 00:00:00:00:00:e1 3
+
+table_add ipv4_lpm ipv4_forward 10.0.2.0/24 => 00:00:00:00:00:a4 1
+table_add ipv4_lpm ipv4_forward 10.0.4.0/24 => 00:00:00:00:00:61 4

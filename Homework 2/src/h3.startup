@@ -1,8 +1,10 @@
-# Configure MAC address to match static switch routes
-ip link set eth0 address 00:00:00:00:03:03
-# Configure IP address
-ip addr add 10.0.3.1/24 dev eth0
-# Set default gateway
-ip route add default via 10.0.3.254
-# Add static ARP entry for the edge switch H
-arp -i eth0 -s 10.0.3.254 00:00:00:00:08:00
+# Assigning IP address to the interface connected to H
+ip link set dev eth0 address 00:00:00:00:00:03
+ip addr add 10.0.3.10/24 dev eth0
+
+# Setting default route via H
+ip route add default via 10.0.3.1
+ip neigh add 10.0.3.1 lladdr 00:00:00:00:00:73 dev eth0
+
+ip link set dev eth0 mtu 1474
+ethtool -K eth0 tx off rx off

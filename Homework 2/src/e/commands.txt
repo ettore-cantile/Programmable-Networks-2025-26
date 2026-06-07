@@ -1,4 +1,8 @@
-table_add ipv4_lpm ipv4_forward 10.0.1.0/24 => 00:00:00:00:0C:00 1
-table_add ipv4_lpm ipv4_forward 10.0.2.0/24 => 00:00:00:00:0C:00 1
-table_add ipv4_lpm ipv4_forward 10.0.3.0/24 => 00:00:00:00:07:00 2
-table_add ipv4_lpm ipv4_forward 10.0.4.0/24 => 00:00:00:00:07:00 2
+table_add sff_exact forward_to_sf 100 253 => 3
+table_add sff_exact forward_to_sf 200 255 => 3
+
+table_add proxy_exact restore_nsh 3 10.0.1.10 10.0.3.10 => 100 251 40 00:00:00:00:00:c3 1
+
+table_add proxy_exact end_of_chain 3 10.0.2.10 10.0.4.10 => 00:00:00:00:00:62 2
+
+table_add ipv4_lpm ipv4_forward 10.0.4.0/24 => 00:00:00:00:00:62 2

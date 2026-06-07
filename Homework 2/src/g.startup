@@ -1,13 +1,25 @@
-# Assign MAC addresses to interfaces using ip link
-ip link set dev eth0 address 00:00:00:00:07:00
-ip link set dev eth1 address 00:00:00:00:07:01
-ip link set dev eth2 address 00:00:00:00:07:02
-ip link set dev eth3 address 00:00:00:00:07:03
+# Bringing up interfaces with specific MAC addresses
+ip link set dev eth0 address 00:00:00:00:00:61
+ip link set dev eth1 address 00:00:00:00:00:62
+ip link set dev eth2 address 00:00:00:00:00:63
+ip link set dev eth3 address 00:00:00:00:00:64
 
+# Compile the P4 program from the "shared" folder
 p4c /shared/project_2.p4
+
+# Start the "simple_switch" daemon in the background
+# Map physical interfaces ( ethX ) to P4 logical ports ( 1, 2, 3, 4 )
 simple_switch -i 1@eth0 -i 2@eth1 -i 3@eth2 -i 4@eth3 /project_2.json &
 
-while [[ $(pgrep simple_switch) -eq 0 ]]; do sleep 1; done
-until simple_switch_CLI <<< "help" > /dev/null 2>&1; do sleep 1; done
+# Wait actively until the process is running
+while ! pgrep simple_switch > /dev/null; do 
+    sleep 1
+done
 
+# Wait until the Command Line Interface ( CLI ) is ready to accept commands
+until simple_switch_CLI <<< "help" > /dev/null 2>&1; do 
+    sleep 1
+done
+
+# Inject the control plane rules defined in "commands.txt" into the switch
 simple_switch_CLI < /commands.txt

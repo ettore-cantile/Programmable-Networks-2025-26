@@ -1,1 +1,1 @@
-table_add ipv4_lpm ipv4_forward 0.0.0.0/0 => 00:00:00:00:0D:00 1
+table_add sf_exact reflect_and_mark 1 => 2

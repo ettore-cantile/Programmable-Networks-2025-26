@@ -1,10 +1,22 @@
-# Assign MAC address to the interface connected to SFF2 (Node E) using ip link
-ip link set dev eth0 address 00:00:00:00:F3:00
+# Bringing up interface with specific MAC address
+ip link set dev eth0 address 00:00:00:00:00:33
 
+# Compile the P4 program from the "shared" folder
 p4c /shared/project_2.p4
+
+# Start the "simple_switch" daemon in the background
+# Map physical interfaces ( ethX ) to P4 logical ports ( 1 )
 simple_switch -i 1@eth0 /project_2.json &
 
-while [[ $(pgrep simple_switch) -eq 0 ]]; do sleep 1; done
-until simple_switch_CLI <<< "help" > /dev/null 2>&1; do sleep 1; done
+# Wait actively until the process is running
+while ! pgrep simple_switch > /dev/null; do
+    sleep 1
+done
 
+# Wait until the Command Line Interface ( CLI ) is ready to accept commands
+until simple_switch_CLI <<< "help" > /dev/null 2>&1; do 
+    sleep 1
+done
+
+# Inject the control plane rules defined in "commands.txt" into the switch
 simple_switch_CLI < /commands.txt
