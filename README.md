@@ -136,6 +136,196 @@ The automated traffic orchestration scripts ( `incast_generator.py` and `incast_
 
 ---
 
-## Homework 2: [ Placeholder ]
+## Homework 2: P4-Based Service Function Chaining ( SFC )
 
-*( The documentation, scenario description, execution guidelines, and objective parameters for Homework 2 will be appended here once the assignment details are published. )*
+### 📝 Project Overview and Scenario
+Modern cloud and edge networks increasingly rely on **Service Function Chaining ( SFC )** to route traffic through ordered sequences of virtualized Network Functions ( NFs ) — such as firewalls, intrusion detection systems, or traffic shapers — before reaching its final destination. In this scenario, a multi-node topology is emulated via **Kathara** using fully programmable **P4** data-plane switches ( `kathara/p4` image running BMv2 `simple_switch` ).
+
+The network is structured around two distinct functional planes:
+
+* **Underlay Plane:** Transit nodes ( B, C, F, G, H ) forward encapsulated SFC traffic using **MPLS label switching**, providing a scalable and decoupled transport fabric between edge and service nodes.
+* **SFC Overlay Plane:** Edge and service nodes implement the full SFC pipeline using a combination of **NSH ( Network Service Header )** encapsulation, MPLS tunneling, and P4-based per-packet logic, as defined in the IEEE/IETF SFC architecture.
+
+### 🌐 Network Topology
+The lab topology is defined in `lab.conf` and consists of the following node roles:
+
+| Node | Role | Description |
+|------|------|-------------|
+| **A** | SFC Classifier + Edge Device | Classifies incoming traffic from H1/H2 and initiates NSH+MPLS encapsulation |
+| **B, C, F, G, H** | Underlay Transit | Forwards MPLS-encapsulated packets through the core network |
+| **D** | SFC Forwarder ( SFF ) + Proxy | Steers packets to SF1/SF2, re-encapsulates returned traffic and forwards to the next SFF |
+| **E** | SFC Forwarder ( SFF ) + Proxy | Steers packets to SF3, re-encapsulates returned traffic and signals end of chain |
+| **SF1, SF2, SF3** | Service Functions | NSH-unaware reflectors; receive decapsulated IPv4 frames, apply a DSCP watermark, and return traffic to the SFF |
+| **H1, H2** | Source Hosts | Generate IPv4 traffic toward destination hosts H3/H4 |
+| **H3, H4** | Destination Hosts | Receive traffic after full SFC traversal |
+
+Hosts H1 and H2 are connected to Node A ( `10.0.1.0/24` and `10.0.2.0/24` respectively ), while H3 and H4 are reachable via Node H ( `10.0.3.0/24` and `10.0.4.0/24` ).
+
+### 🎯 Objective
+The primary objective of this project is to implement a complete **P4-based SFC pipeline** operating on a real programmable data plane, achieving the following:
+
+1. **SFC Classification:** Node A matches incoming IPv4 flows ( by `srcAddr` + `dstAddr` ) and encapsulates them with an **NSH header** ( carrying SPI and SI ) wrapped inside an **MPLS label**, injecting traffic into the SFC domain.
+
+2. **MPLS Underlay Forwarding:** Transit nodes ( B, C, F, G, H ) switch packets based on MPLS labels, providing hop-by-hop transport between SFFs without inspecting the SFC payload.
+
+3. **SFF Proxy Logic:** Nodes D and E implement the **SFF Proxy** pattern — they strip SFC headers before delivering packets to NSH-unaware SFs, and transparently restore the NSH context ( updating SPI/SI ) upon return, forwarding to the next SFF or triggering end-of-chain delivery.
+
+4. **SF Watermarking:** Service Functions ( SF1, SF2, SF3 ) act as pure reflectors: they receive bare IPv4/Ethernet frames, increment the `diffserv` ( DSCP ) field as a **traversal watermark**, and return the packet on the same ingress port.
+
+5. **End-of-Chain Delivery:** After all SFs have processed the packet, the final SFF strips the remaining SFC headers and forwards the restored IPv4 frame toward the destination host via standard routing.
+
+The entire data-plane logic is implemented in a single P4₁₆ program ( `project_2.p4` ) compiled via `p4c` and loaded into each node's `simple_switch` instance at startup. Control-plane rules are injected per-node via `commands.txt` files using `simple_switch_CLI`.
+
+---
+
+### 🚀 How to Run the Laboratory
+
+To execute the P4 SFC simulation, follow this sequence strictly from the `Homework 2/src` root directory:
+
+1. **Start the Kathara Infrastructure:**
+Launch all nodes defined in `lab.conf` without opening individual terminal windows:
+
+    ```bash
+    kathara lstart --noterminals
+    ```
+
+2. **Wait for P4 Compilation and Switch Initialization:**
+Each node autonomously compiles `project_2.p4` via `p4c`, starts the `simple_switch` daemon, and injects its control-plane rules through `simple_switch_CLI`. Allow sufficient time for all nodes to complete this bootstrap sequence before generating traffic.
+
+3. **Connect to a Host Node and Test Basic Reachability:**
+Open a shell into one of the source hosts and verify end-to-end connectivity through the SFC pipeline:
+
+    ```bash
+    kathara connect h1
+    ```
+
+    Inside the `h1` container, use `ping` to verify SFC traversal:
+
+    ```bash
+    # Test basic reachability and SFC traversal (ICMP)
+    ping 10.0.3.10
+    ```
+
+4. **Run iperf3 Tests:**
+To test chain enforcement, run iperf3 experiments as specified in the project requirements. Start the server on the destination host and the client on the source host. Because the SFC overlay adds MPLS ( 4 bytes ), NSH ( 8 bytes ), and an inner Ethernet header ( 14 bytes ), the maximum inner IPv4 packet size is reduced to 1474 bytes, yielding a safe TCP MSS of 1434 bytes.
+
+    * **Test 1 — Chain h1 → h3 ( SF1 → SF3 → SF2 ):** open a terminal in `h3` and start the server, then trigger the client on `h1`:
+
+        ```bash
+        # On h3 (server)
+        iperf3 -s
+        ```
+
+        ```bash
+        # On h1 (client) — safe MSS to avoid fragmentation
+        iperf3 -c 10.0.3.10 -M 1434
+        ```
+
+    * **Test 2 — Chain h2 → h4 ( SF3 only ):** open a terminal in `h4` and start the server, then trigger the client on `h2`:
+
+        ```bash
+        # On h4 (server)
+        iperf3 -s
+        ```
+
+        ```bash
+        # On h2 (client) — safe MSS to avoid fragmentation
+        iperf3 -c 10.0.4.10 -M 1434
+        ```
+
+    * **Test 3 — Return traffic ( h3 → h1, bypasses SFC ):** verify that reverse-direction traffic follows the shortest IPv4 path without entering any service chain:
+
+        ```bash
+        # On h1 (server)
+        iperf3 -s
+        ```
+
+        ```bash
+        # On h3 (client)
+        iperf3 -c 10.0.1.10 -M 1434
+        ```
+
+5. **Capture and Inspect Traffic with Wireshark:**
+On the **host machine**, capture traffic on the virtual interface corresponding to an internal link ( e.g., the link between A and B ) to observe NSH and MPLS encapsulation live. Captures are saved inside the `shared/captures/` directory:
+
+    ```bash
+    # Capture on the A↔B link and save to the shared captures folder
+    sudo tcpdump -i <interface> -w shared/captures/chain_1/a.pcap
+    ```
+
+    Wireshark will display the layered encapsulation: **Ethernet → MPLS → NSH → inner Ethernet → IPv4 → TCP/ICMP**.
+
+6. **Inspect P4 Switch Logs with `grep`:**
+The classifier node A and the SFF nodes D and E generate detailed text logs ( `log_node_A.txt`, `log_node_D.txt`, `log_node_E.txt` ) inside the `shared/` folder. From the `src/` directory on the host machine, filter for the most relevant pipeline events:
+
+    ```bash
+    # Inspect table hits, matched actions, and egress port decisions on Node A
+    grep -E "Table.*hit|Action entry|Egress port is [1-9]|key is 0800|key is 8847" shared/log_node_A.txt
+
+    # Same filter for the SFF/Proxy node D
+    grep -E "Table.*hit|Action entry|Egress port is [1-9]|key is 0800|key is 8847" shared/log_node_D.txt
+
+    # Same filter for the SFF/Proxy node E
+    grep -E "Table.*hit|Action entry|Egress port is [1-9]|key is 0800|key is 8847" shared/log_node_E.txt
+    ```
+
+    > **Note:** The key values and other parameters shown in these log entries ( e.g., `key is 0800`, `key is 8847` ) depend on the actual traffic generated during the experiment and the specific control-plane rules installed in each node. Update the filter values accordingly to match your execution context.
+
+7. **Verify DSCP Watermark Accumulation:**
+After traffic has traversed the full chain, connect to the destination host and capture the received packets. The IPv4 `diffserv` field will carry the cumulative sum of watermarks applied by each SF in the chain ( e.g., `diffserv = SF1_mark + SF2_mark + SF3_mark` ), providing cryptographic-style proof of traversal:
+
+    ```bash
+    kathara connect h3
+    ```
+
+    Inside `h3`, use `tcpdump` to inspect arriving packets at all layers:
+
+    ```bash
+    tcpdump -i any -n -e -v
+    ```
+
+8. **Terminate the Laboratory:**
+Once all tests have been completed and captures saved:
+
+    * Close all `kathara connect` terminals by typing `exit`.
+
+    * Tear down the entire virtual infrastructure:
+
+        ```bash
+        kathara lclean
+        ```
+
+---
+
+### 🔬 P4 Pipeline Architecture
+
+The `project_2.p4` program implements a unified pipeline that handles all node roles through a single shared binary. The ingress control block applies the following decision logic:
+
+```
+if ( IPv4 valid AND NSH NOT valid ):
+    → try proxy_exact        (packet returning from SF → restore NSH context)
+    → try sf_exact           (packet inside SF → reflect + watermark)
+    → try classifier_exact   (new flow → classify and encapsulate SFC)
+    → fallback: ipv4_lpm     (ordinary return traffic)
+else if ( NSH valid ):
+    → try sff_exact          (SFF logic: forward to SF or next SFF)
+    → fallback: mpls_exact   (MPLS underlay forwarding)
+else if ( MPLS valid AND NSH NOT valid ):
+    → mpls_exact             (pure transit forwarding)
+```
+
+The header stack parsed and emitted by every node is: **outer\_ethernet → MPLS → NSH → inner\_ethernet → IPv4 → TCP**.
+
+The IPv4 checksum is recomputed in the egress pipeline after every SF traversal, since the `diffserv` field is modified in-flight by `reflect_and_mark`.
+
+---
+
+### ⚠️ Important Notes
+
+* **MTU Reduction:** All host interfaces are configured with `ip link set dev eth0 mtu 1474` to account for the overhead introduced by NSH ( 8 bytes ) and MPLS ( 4 bytes ) encapsulation headers on top of the standard 1500-byte Ethernet MTU. Failure to reduce the MTU will cause fragmentation or silent packet drops along the SFC path.
+
+* **TCP Checksum Offloading:** All host nodes disable hardware checksum offloading via `ethtool -K eth0 tx off rx off`. This is mandatory in virtualized environments ( Kathara / Docker ) where the kernel's virtual network stack may generate incorrect checksums for encapsulated traffic.
+
+* **P4 Compilation Time:** The `p4c` compiler runs inside each container at startup. Depending on the host machine's CPU performance, compilation may take a while per node. The `while ! pgrep simple_switch` loop in each `.startup` file ensures that `simple_switch_CLI` does not inject rules before the daemon is fully operational.
+
+* **Log File Location:** All log files generated by nodes A, D, and E are written to the `shared/` directory, which is mounted as a shared volume across all containers. This allows inspection of log files directly from the host machine without requiring a `kathara connect` session.
