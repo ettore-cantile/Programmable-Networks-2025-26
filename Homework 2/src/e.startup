@@ -23,4 +23,6 @@ done
 # Inject the control plane rules defined in "commands.txt" into the switch
 simple_switch_CLI < /commands.txt
 
+# Command that must be executed from the terminal, specifically from the project's root folder ( src/... ) 
+# Note: it allows you to apply a filter to the node's text log file to show only the most relevant events ( keys and other values ​​must be updated accordingly )
 # grep -E "Table.*hit|Action entry|Egress port is [1-9]|key is 0800|key is 8847" log_node_E.txt
