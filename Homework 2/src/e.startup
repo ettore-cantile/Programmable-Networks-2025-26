@@ -8,7 +8,7 @@ p4c /shared/project_2.p4
 
 # Start the "simple_switch" daemon in the background
 # Map physical interfaces ( ethX ) to P4 logical ports ( 1, 2, 3 )
-simple_switch -i 1@eth0 -i 2@eth1 -i 3@eth2 /project_2.json &
+simple_switch -i 1@eth0 -i 2@eth1 -i 3@eth2 --log-file /shared/log_node_E /project_2.json &
 
 # Wait actively until the process is running
 while ! pgrep simple_switch > /dev/null; do
@@ -22,3 +22,5 @@ done
 
 # Inject the control plane rules defined in "commands.txt" into the switch
 simple_switch_CLI < /commands.txt
+
+# grep -E "Table.*hit|Action entry|Egress port is [1-9]|key is 0800|key is 8847" log_node_E.txt
