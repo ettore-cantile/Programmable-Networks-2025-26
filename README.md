@@ -190,39 +190,72 @@ Launch all nodes defined in `lab.conf` without opening individual terminal windo
     ```
 
 2. **Wait for P4 Compilation and Switch Initialization:**
-Each node autonomously compiles `project_2.p4` via `p4c`, starts the `simple_switch` daemon, and injects its control-plane rules through `simple_switch_CLI`. Allow sufficient time ( ~30–60 seconds ) for all nodes to complete this bootstrap sequence before generating traffic.
+Each node autonomously compiles `project_2.p4` via `p4c`, starts the `simple_switch` daemon, and injects its control-plane rules through `simple_switch_CLI`. Allow sufficient time for all nodes to complete this bootstrap sequence before generating traffic.
 
-3. **Connect to a Host Node and Generate Traffic:**
-Open a shell into one of the source hosts and send test traffic toward a destination:
+3. **Connect to a Host Node and Test Basic Reachability:**
+Open a shell into one of the source hosts and verify end-to-end connectivity through the SFC pipeline:
 
     ```bash
     kathara connect h1
     ```
 
-    Inside the `h1` container, use `ping` or `curl` to trigger the SFC pipeline:
+    Inside the `h1` container, use `ping` to verify SFC traversal:
 
     ```bash
     # Test basic reachability and SFC traversal (ICMP)
     ping 10.0.3.10
-
-    # Generate TCP traffic to verify full chain enforcement
-    curl http://10.0.3.10
     ```
 
-4. **Capture and Inspect Traffic with Wireshark:**
-On the **host machine**, capture traffic on any virtual interface corresponding to an internal link ( e.g., the link between A and B, or between D and SF1 ) to observe NSH and MPLS encapsulation live:
+4. **Run iperf3 Tests:**
+To test chain enforcement, run iperf3 experiments as specified in the project requirements. Start the server on the destination host and the client on the source host. Because the SFC overlay adds MPLS ( 4 bytes ), NSH ( 8 bytes ), and an inner Ethernet header ( 14 bytes ), the maximum inner IPv4 packet size is reduced to 1474 bytes, yielding a safe TCP MSS of 1434 bytes.
+
+    * **Test 1 — Chain h1 → h3 ( SF1 → SF3 → SF2 ):** open a terminal in `h3` and start the server, then trigger the client on `h1`:
+
+        ```bash
+        # On h3 (server)
+        iperf3 -s
+        ```
+
+        ```bash
+        # On h1 (client) — safe MSS to avoid fragmentation
+        iperf3 -c 10.0.3.10 -M 1434
+        ```
+
+    * **Test 2 — Chain h2 → h4 ( SF3 only ):** open a terminal in `h4` and start the server, then trigger the client on `h2`:
+
+        ```bash
+        # On h4 (server)
+        iperf3 -s
+        ```
+
+        ```bash
+        # On h2 (client) — safe MSS to avoid fragmentation
+        iperf3 -c 10.0.4.10 -M 1434
+        ```
+
+    * **Test 3 — Return traffic ( h3 → h1, bypasses SFC ):** verify that reverse-direction traffic follows the shortest IPv4 path without entering any service chain:
+
+        ```bash
+        # On h1 (server)
+        iperf3 -s
+        ```
+
+        ```bash
+        # On h3 (client)
+        iperf3 -c 10.0.1.10 -M 1434
+        ```
+
+5. **Capture and Inspect Traffic with Wireshark:**
+On the **host machine**, capture traffic on the virtual interface corresponding to an internal link ( e.g., the link between A and B ) to observe NSH and MPLS encapsulation live. Captures are saved inside the `shared/captures/` directory:
 
     ```bash
-    # Capture on the A↔B link (replace with the correct veth interface name)
-    sudo wireshark &
-
-    # Alternatively, capture directly to a pcap file for offline analysis
-    sudo tcpdump -i <interface> -w shared/captures/capture_A_B.pcap
+    # Capture on the A↔B link and save to the shared captures folder
+    sudo tcpdump -i <interface> -w shared/captures/chain_1/a.pcap
     ```
 
     Wireshark will display the layered encapsulation: **Ethernet → MPLS → NSH → inner Ethernet → IPv4 → TCP/ICMP**.
 
-5. **Inspect P4 Switch Logs with `grep`:**
+6. **Inspect P4 Switch Logs with `grep`:**
 The classifier node A and the SFF nodes D and E generate detailed text logs ( `log_node_A.txt`, `log_node_D.txt`, `log_node_E.txt` ) inside the `shared/` folder. From the `src/` directory on the host machine, filter for the most relevant pipeline events:
 
     ```bash
@@ -236,22 +269,22 @@ The classifier node A and the SFF nodes D and E generate detailed text logs ( `l
     grep -E "Table.*hit|Action entry|Egress port is [1-9]|key is 0800|key is 8847" shared/log_node_E.txt
     ```
 
-    These log entries confirm that the correct P4 tables ( `classifier_exact`, `sff_exact`, `proxy_exact`, `sf_exact`, `mpls_exact` ) are being hit and the expected actions are executed at each hop.
+    > **Note:** The key values and other parameters shown in these log entries ( e.g., `key is 0800`, `key is 8847` ) depend on the actual traffic generated during the experiment and the specific control-plane rules installed in each node. Update the filter values accordingly to match your execution context.
 
-6. **Verify DSCP Watermark Accumulation:**
+7. **Verify DSCP Watermark Accumulation:**
 After traffic has traversed the full chain, connect to the destination host and capture the received packets. The IPv4 `diffserv` field will carry the cumulative sum of watermarks applied by each SF in the chain ( e.g., `diffserv = SF1_mark + SF2_mark + SF3_mark` ), providing cryptographic-style proof of traversal:
 
     ```bash
     kathara connect h3
     ```
 
-    Inside `h3`, use `tcpdump` to inspect the DSCP field of arriving packets:
+    Inside `h3`, use `tcpdump` to inspect arriving packets at all layers:
 
     ```bash
-    tcpdump -i eth0 -v ip
+    tcpdump -i any -n -e -v
     ```
 
-7. **Terminate the Laboratory:**
+8. **Terminate the Laboratory:**
 Once all tests have been completed and captures saved:
 
     * Close all `kathara connect` terminals by typing `exit`.
@@ -293,6 +326,6 @@ The IPv4 checksum is recomputed in the egress pipeline after every SF traversal,
 
 * **TCP Checksum Offloading:** All host nodes disable hardware checksum offloading via `ethtool -K eth0 tx off rx off`. This is mandatory in virtualized environments ( Kathara / Docker ) where the kernel's virtual network stack may generate incorrect checksums for encapsulated traffic.
 
-* **P4 Compilation Time:** The `p4c` compiler runs inside each container at startup. Depending on the host machine's CPU performance, compilation may take 10–30 seconds per node. The `while ! pgrep simple_switch` loop in each `.startup` file ensures that `simple_switch_CLI` does not inject rules before the daemon is fully operational.
+* **P4 Compilation Time:** The `p4c` compiler runs inside each container at startup. Depending on the host machine's CPU performance, compilation may take a while per node. The `while ! pgrep simple_switch` loop in each `.startup` file ensures that `simple_switch_CLI` does not inject rules before the daemon is fully operational.
 
 * **Log File Location:** All log files generated by nodes A, D, and E are written to the `shared/` directory, which is mounted as a shared volume across all containers. This allows inspection of log files directly from the host machine without requiring a `kathara connect` session.
