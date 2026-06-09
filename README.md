@@ -228,11 +228,11 @@ To test chain enforcement, run `iperf3` experiments as specified in the project 
 5. **Capture and Inspect Traffic Formats ( Verification, eventually storing them via Wireshark ):**
 The project explicitly requires verifying that packet formats change dynamically across different network segments. You can use `tcpdump` to capture and inspect the exact encapsulation stack ( some results are listed in the `shared/captures` directory ):
 
-    * **Verify Overlay Encapsulation ( Eth / MPLS / NSH / Eth / IPv4 / TCP ):**
+    * **Verify Packet Encapsulation ( Eth / MPLS / NSH / Eth / IPv4 / TCP ):**
       Capture traffic on an underlay transit link ( e.g., Node C, interface facing Node E ) during a ping from h1 to h3:
       ```bash
       kathara connect c
-      tcpdump -i eth2 -n -e -v
+      tcpdump -i any -n -e -v
       ```
       *Expected output:* You will clearly see the `MPLS unicast` EtherType followed by the inner IPv4 payload.
 
@@ -240,7 +240,7 @@ The project explicitly requires verifying that packet formats change dynamically
       Capture traffic on the link connecting an SFF to a Service Function ( e.g., Node D, interface facing SF1 ):
       ```bash
       kathara connect d
-      tcpdump -i eth2 -n -e -v
+      tcpdump -i any -n -e -v
       ```
       *Expected output:* The proxy logic successfully strips the overlay. The SF receives pure IPv4 packets without any MPLS or NSH headers.
 
@@ -255,7 +255,7 @@ The classifier node A and the SFF nodes D and E generate detailed text logs insi
     grep -E "sff_exact|proxy_exact|forward_to_sf|restore_nsh|end_of_chain" d.txt
     ```
 
-    *( This command is native to Unix/Linux environments, such as Ubuntu and macOS. Therefore, Windows users must execute these commands within WSL (Windows Subsystem for Linux) or by using a terminal emulator like Git Bash. )*
+    *( This command is native to Unix/Linux environments, such as Ubuntu and macOS. Therefore, Windows users must execute these commands within WSL ( Windows Subsystem for Linux ) or by using a terminal emulator like Git Bash. )*
 
 7. **Verify DSCP Watermark Accumulation:**
 After traffic, starting from `h1`, traverses the full chain ( `SFC 1` ), the IPv4 `diffserv` ( TOS ) field carries the cumulative sum of watermarks applied by each SF. Connect to the destination host ( `h3` ) and capture the received packets:
