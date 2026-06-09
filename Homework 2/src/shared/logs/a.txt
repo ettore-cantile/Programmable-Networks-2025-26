@@ -1,0 +1,321 @@
+ction
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] Applying table 'MyIngress.sf_exact'
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Table 'MyIngress.sf_exact': miss
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Action entry is NoAction - 
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] Action NoAction
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] Applying table 'MyIngress.classifier_exact'
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Looking up key:
+* hdr.ipv4.srcAddr    : 0a00030a
+* hdr.ipv4.dstAddr    : 0a00010a
+
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Table 'MyIngress.classifier_exact': miss
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Action entry is NoAction - 
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] Action NoAction
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] Applying table 'MyIngress.ipv4_lpm'
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Looking up key:
+* hdr.ipv4.dstAddr    : 0a00010a
+
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Table 'MyIngress.ipv4_lpm': hit with handle 0
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.ipv4.dstAddr    : LPM       0a000100/24
+Action entry: MyIngress.ipv4_forward - 1,1,
+
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Action entry is MyIngress.ipv4_forward - 1,1,
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] Action MyIngress.ipv4_forward
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] /shared/project_2.p4(155) Primitive standard_metadata.egress_spec = port
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] /shared/project_2.p4(156) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] /shared/project_2.p4(157) Primitive hdr.outer_ethernet.dstAddr = dstAddr
+[06:04:18.001] [bmv2] [T] [thread 43] [7.0] [cxt 0] /shared/project_2.p4(158) Primitive hdr.ipv4.ttl = hdr.ipv4.ttl - 1
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Pipeline 'ingress': end
+[06:04:18.001] [bmv2] [D] [thread 43] [7.0] [cxt 0] Egress port is 1
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Pipeline 'egress': start
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Pipeline 'egress': end
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Deparser 'deparser': start
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Updating checksum 'cksum'
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Deparsing header 'ipv4'
+[06:04:18.001] [bmv2] [D] [thread 45] [7.0] [cxt 0] Deparser 'deparser': end
+[06:04:18.001] [bmv2] [D] [thread 48] [7.0] [cxt 0] Transmitting packet of size 98 out of port 1
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Processing packet received on port 1
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Parser 'parser': start
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:36.197] [bmv2] [T] [thread 43] [8.0] [cxt 0] Bytes parsed: 14
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Extracting header 'ipv4'
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:36.197] [bmv2] [T] [thread 43] [8.0] [cxt 0] Bytes parsed: 34
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Parser 'parser': end
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Pipeline 'ingress': start
+[06:18:36.197] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:36.197] [bmv2] [T] [thread 43] [8.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0001
+* hdr.ipv4.srcAddr              : 0a00010a
+* hdr.ipv4.dstAddr              : 0a00030a
+
+[06:18:36.197] [bmv2] [D] [thread 43] [8.0] [cxt 0] Table 'MyIngress.proxy_exact': miss
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Action entry is NoAction - 
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] Action NoAction
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] Applying table 'MyIngress.sf_exact'
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0001
+
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Table 'MyIngress.sf_exact': miss
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Action entry is NoAction - 
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] Action NoAction
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] Applying table 'MyIngress.classifier_exact'
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Looking up key:
+* hdr.ipv4.srcAddr    : 0a00010a
+* hdr.ipv4.dstAddr    : 0a00030a
+
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Table 'MyIngress.classifier_exact': hit with handle 0
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.ipv4.srcAddr    : EXACT     0a00010a
+* hdr.ipv4.dstAddr    : EXACT     0a00030a
+Action entry: MyIngress.classify_sfc - 64,ff,a,b1,3,
+
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Action entry is MyIngress.classify_sfc - 64,ff,a,b1,3,
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] Action MyIngress.classify_sfc
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(176) Primitive hdr.inner_ethernet.setValid()
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(177) Primitive hdr.nsh.setValid()
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(178) Primitive hdr.mpls.setValid()
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(181) Primitive hdr.inner_ethernet.dstAddr = hdr.outer_ethernet.dstAddr
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(182) Primitive hdr.inner_ethernet.srcAddr = hdr.outer_ethernet.srcAddr
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(183) Primitive hdr.inner_ethernet.etherType = 0x0800
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(185) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(186) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(6) Primitive 0x8847; ...
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(190) Primitive hdr.nsh.ver = 0
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(191) Primitive hdr.nsh.oam = 0
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(192) Primitive hdr.nsh.u1 = 0
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(193) Primitive hdr.nsh.ttl = 15
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(194) Primitive hdr.nsh.length = 6
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(195) Primitive hdr.nsh.u2 = 0
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(196) Primitive hdr.nsh.md_type = 1
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(197) Primitive         hdr.nsh.next_proto = 3; // Note: \"3\" denotes Ethernet payload
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(198) Primitive hdr.nsh.spi = spi
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(199) Primitive hdr.nsh.si = si
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(202) Primitive hdr.mpls.label = mpls_label
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(203) Primitive hdr.mpls.tc = 0
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(204) Primitive hdr.mpls.bos = 1
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(205) Primitive hdr.mpls.ttl = 64
+[06:18:36.198] [bmv2] [T] [thread 43] [8.0] [cxt 0] /shared/project_2.p4(207) Primitive standard_metadata.egress_spec = port
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Pipeline 'ingress': end
+[06:18:36.198] [bmv2] [D] [thread 43] [8.0] [cxt 0] Egress port is 3
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Pipeline 'egress': start
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Pipeline 'egress': end
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparser 'deparser': start
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Updating checksum 'cksum'
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparsing header 'mpls'
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparsing header 'nsh'
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparsing header 'inner_ethernet'
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:36.198] [bmv2] [D] [thread 47] [8.0] [cxt 0] Deparser 'deparser': end
+[06:18:36.198] [bmv2] [D] [thread 48] [8.0] [cxt 0] Transmitting packet of size 124 out of port 3
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Processing packet received on port 3
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Parser 'parser': start
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Bytes parsed: 14
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Extracting header 'ipv4'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Bytes parsed: 34
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Parser 'parser': end
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Pipeline 'ingress': start
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+* hdr.ipv4.srcAddr              : 0a00030a
+* hdr.ipv4.dstAddr              : 0a00010a
+
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Table 'MyIngress.proxy_exact': miss
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Action entry is NoAction - 
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Action NoAction
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Applying table 'MyIngress.sf_exact'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Table 'MyIngress.sf_exact': miss
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Action entry is NoAction - 
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Action NoAction
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Applying table 'MyIngress.classifier_exact'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Looking up key:
+* hdr.ipv4.srcAddr    : 0a00030a
+* hdr.ipv4.dstAddr    : 0a00010a
+
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Table 'MyIngress.classifier_exact': miss
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Action entry is NoAction - 
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Action NoAction
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Applying table 'MyIngress.ipv4_lpm'
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Looking up key:
+* hdr.ipv4.dstAddr    : 0a00010a
+
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Table 'MyIngress.ipv4_lpm': hit with handle 0
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.ipv4.dstAddr    : LPM       0a000100/24
+Action entry: MyIngress.ipv4_forward - 1,1,
+
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Action entry is MyIngress.ipv4_forward - 1,1,
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] Action MyIngress.ipv4_forward
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] /shared/project_2.p4(155) Primitive standard_metadata.egress_spec = port
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] /shared/project_2.p4(156) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] /shared/project_2.p4(157) Primitive hdr.outer_ethernet.dstAddr = dstAddr
+[06:18:36.215] [bmv2] [T] [thread 43] [9.0] [cxt 0] /shared/project_2.p4(158) Primitive hdr.ipv4.ttl = hdr.ipv4.ttl - 1
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Pipeline 'ingress': end
+[06:18:36.215] [bmv2] [D] [thread 43] [9.0] [cxt 0] Egress port is 1
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Pipeline 'egress': start
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Pipeline 'egress': end
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Deparser 'deparser': start
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Updating checksum 'cksum'
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:36.215] [bmv2] [D] [thread 45] [9.0] [cxt 0] Deparser 'deparser': end
+[06:18:36.215] [bmv2] [D] [thread 48] [9.0] [cxt 0] Transmitting packet of size 98 out of port 1
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Processing packet received on port 1
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Parser 'parser': start
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Bytes parsed: 14
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Extracting header 'ipv4'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Bytes parsed: 34
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Parser 'parser': end
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Pipeline 'ingress': start
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0001
+* hdr.ipv4.srcAddr              : 0a00010a
+* hdr.ipv4.dstAddr              : 0a00030a
+
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Table 'MyIngress.proxy_exact': miss
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Action entry is NoAction - 
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Action NoAction
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Applying table 'MyIngress.sf_exact'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0001
+
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Table 'MyIngress.sf_exact': miss
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Action entry is NoAction - 
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Action NoAction
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Applying table 'MyIngress.classifier_exact'
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Looking up key:
+* hdr.ipv4.srcAddr    : 0a00010a
+* hdr.ipv4.dstAddr    : 0a00030a
+
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Table 'MyIngress.classifier_exact': hit with handle 0
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.ipv4.srcAddr    : EXACT     0a00010a
+* hdr.ipv4.dstAddr    : EXACT     0a00030a
+Action entry: MyIngress.classify_sfc - 64,ff,a,b1,3,
+
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Action entry is MyIngress.classify_sfc - 64,ff,a,b1,3,
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] Action MyIngress.classify_sfc
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(176) Primitive hdr.inner_ethernet.setValid()
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(177) Primitive hdr.nsh.setValid()
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(178) Primitive hdr.mpls.setValid()
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(181) Primitive hdr.inner_ethernet.dstAddr = hdr.outer_ethernet.dstAddr
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(182) Primitive hdr.inner_ethernet.srcAddr = hdr.outer_ethernet.srcAddr
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(183) Primitive hdr.inner_ethernet.etherType = 0x0800
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(185) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(186) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(6) Primitive 0x8847; ...
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(190) Primitive hdr.nsh.ver = 0
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(191) Primitive hdr.nsh.oam = 0
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(192) Primitive hdr.nsh.u1 = 0
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(193) Primitive hdr.nsh.ttl = 15
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(194) Primitive hdr.nsh.length = 6
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(195) Primitive hdr.nsh.u2 = 0
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(196) Primitive hdr.nsh.md_type = 1
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(197) Primitive         hdr.nsh.next_proto = 3; // Note: \"3\" denotes Ethernet payload
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(198) Primitive hdr.nsh.spi = spi
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(199) Primitive hdr.nsh.si = si
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(202) Primitive hdr.mpls.label = mpls_label
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(203) Primitive hdr.mpls.tc = 0
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(204) Primitive hdr.mpls.bos = 1
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(205) Primitive hdr.mpls.ttl = 64
+[06:18:37.198] [bmv2] [T] [thread 43] [10.0] [cxt 0] /shared/project_2.p4(207) Primitive standard_metadata.egress_spec = port
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Pipeline 'ingress': end
+[06:18:37.198] [bmv2] [D] [thread 43] [10.0] [cxt 0] Egress port is 3
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Pipeline 'egress': start
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Pipeline 'egress': end
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparser 'deparser': start
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Updating checksum 'cksum'
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparsing header 'mpls'
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparsing header 'nsh'
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparsing header 'inner_ethernet'
+[06:18:37.198] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:37.199] [bmv2] [D] [thread 47] [10.0] [cxt 0] Deparser 'deparser': end
+[06:18:37.199] [bmv2] [D] [thread 48] [10.0] [cxt 0] Transmitting packet of size 124 out of port 3
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Processing packet received on port 3
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Parser 'parser': start
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Bytes parsed: 14
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Extracting header 'ipv4'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Bytes parsed: 34
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Parser 'parser': end
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Pipeline 'ingress': start
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+* hdr.ipv4.srcAddr              : 0a00030a
+* hdr.ipv4.dstAddr              : 0a00010a
+
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Table 'MyIngress.proxy_exact': miss
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Action entry is NoAction - 
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Action NoAction
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Applying table 'MyIngress.sf_exact'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Table 'MyIngress.sf_exact': miss
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Action entry is NoAction - 
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Action NoAction
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Applying table 'MyIngress.classifier_exact'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Looking up key:
+* hdr.ipv4.srcAddr    : 0a00030a
+* hdr.ipv4.dstAddr    : 0a00010a
+
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Table 'MyIngress.classifier_exact': miss
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Action entry is NoAction - 
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Action NoAction
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Applying table 'MyIngress.ipv4_lpm'
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Looking up key:
+* hdr.ipv4.dstAddr    : 0a00010a
+
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Table 'MyIngress.ipv4_lpm': hit with handle 0
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.ipv4.dstAddr    : LPM       0a000100/24
+Action entry: MyIngress.ipv4_forward - 1,1,
+
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Action entry is MyIngress.ipv4_forward - 1,1,
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] Action MyIngress.ipv4_forward
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] /shared/project_2.p4(155) Primitive standard_metadata.egress_spec = port
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] /shared/project_2.p4(156) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] /shared/project_2.p4(157) Primitive hdr.outer_ethernet.dstAddr = dstAddr
+[06:18:37.219] [bmv2] [T] [thread 43] [11.0] [cxt 0] /shared/project_2.p4(158) Primitive hdr.ipv4.ttl = hdr.ipv4.ttl - 1
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Pipeline 'ingress': end
+[06:18:37.219] [bmv2] [D] [thread 43] [11.0] [cxt 0] Egress port is 1
+[06:18:37.220] [bmv2] [D] 
