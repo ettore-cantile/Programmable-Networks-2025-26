@@ -285,7 +285,7 @@ if ( IPv4 valid AND NSH NOT valid ):
     → try classifier_exact   ( new flow → classify and encapsulate SFC )
     → fallback: ipv4_lpm     ( ordinary return traffic )
 else if ( NSH valid ):
-    → try sff_exact          (SFF logic: forward to SF or next SFF )
+    → try sff_exact          ( SFF logic: forward to SF or next SFF )
     → fallback: mpls_exact   ( MPLS underlay forwarding )
 else if ( MPLS valid AND NSH NOT valid ):
     → mpls_exact             ( pure transit forwarding )
