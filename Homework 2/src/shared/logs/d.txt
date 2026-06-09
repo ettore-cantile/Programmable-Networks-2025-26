@@ -1,0 +1,446 @@
+d()
+[06:04:17.996] [bmv2] [T] [thread 43] [15.0] [cxt 0] /shared/project_2.p4(273) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:04:17.996] [bmv2] [T] [thread 43] [15.0] [cxt 0] /shared/project_2.p4(274) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:04:17.996] [bmv2] [T] [thread 43] [15.0] [cxt 0] /shared/project_2.p4(275) Primitive hdr.outer_ethernet.etherType = 0x0800
+[06:04:17.996] [bmv2] [T] [thread 43] [15.0] [cxt 0] /shared/project_2.p4(277) Primitive hdr.inner_ethernet.setInvalid()
+[06:04:17.996] [bmv2] [T] [thread 43] [15.0] [cxt 0] /shared/project_2.p4(279) Primitive standard_metadata.egress_spec = port
+[06:04:17.996] [bmv2] [D] [thread 43] [15.0] [cxt 0] Pipeline 'ingress': end
+[06:04:17.996] [bmv2] [D] [thread 43] [15.0] [cxt 0] Egress port is 2
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Pipeline 'egress': start
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Pipeline 'egress': end
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Deparser 'deparser': start
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Updating checksum 'cksum'
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Deparsing header 'ipv4'
+[06:04:17.997] [bmv2] [D] [thread 46] [15.0] [cxt 0] Deparser 'deparser': end
+[06:04:17.997] [bmv2] [D] [thread 48] [15.0] [cxt 0] Transmitting packet of size 98 out of port 2
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Processing packet received on port 1
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser 'parser': start
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser state 'start': key is 8847
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] Bytes parsed: 14
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser 'parser' entering state 'parse_mpls'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Extracting header 'mpls'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser state 'parse_mpls' has no switch, going to default next state
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] Bytes parsed: 18
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser 'parser' entering state 'parse_nsh'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Extracting header 'nsh'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Extracting header 'inner_ethernet'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser state 'parse_nsh': key is 0800
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] Bytes parsed: 40
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Extracting header 'ipv4'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] Bytes parsed: 60
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Parser 'parser': end
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Pipeline 'ingress': start
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is false
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(390) Condition "hdr.nsh.isValid()" (node_7) is true
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] Applying table 'MyIngress.sff_exact'
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Looking up key:
+* hdr.nsh.spi         : 000064
+* hdr.nsh.si          : ff
+
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Table 'MyIngress.sff_exact': hit with handle 0
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.nsh.spi         : EXACT     000064
+* hdr.nsh.si          : EXACT     ff
+Action entry: MyIngress.forward_to_sf - 3,
+
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Action entry is MyIngress.forward_to_sf - 3,
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] Action MyIngress.forward_to_sf
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(247) Primitive hdr.mpls.setInvalid()
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(248) Primitive hdr.nsh.setInvalid()
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(251) Primitive hdr.outer_ethernet = hdr.inner_ethernet
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(252) Primitive hdr.inner_ethernet.setInvalid()
+[06:18:36.200] [bmv2] [T] [thread 43] [16.0] [cxt 0] /shared/project_2.p4(254) Primitive standard_metadata.egress_spec = sf_port
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Pipeline 'ingress': end
+[06:18:36.200] [bmv2] [D] [thread 43] [16.0] [cxt 0] Egress port is 3
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Pipeline 'egress': start
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Pipeline 'egress': end
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Deparser 'deparser': start
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Updating checksum 'cksum'
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:36.200] [bmv2] [D] [thread 47] [16.0] [cxt 0] Deparser 'deparser': end
+[06:18:36.200] [bmv2] [D] [thread 48] [16.0] [cxt 0] Transmitting packet of size 98 out of port 3
+[06:18:36.201] [bmv2] [D] [thread 43] [17.0] [cxt 0] Processing packet received on port 3
+[06:18:36.201] [bmv2] [D] [thread 43] [17.0] [cxt 0] Parser 'parser': start
+[06:18:36.201] [bmv2] [D] [thread 43] [17.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] Bytes parsed: 14
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Extracting header 'ipv4'
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] Bytes parsed: 34
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Parser 'parser': end
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Pipeline 'ingress': start
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+* hdr.ipv4.srcAddr              : 0a00010a
+* hdr.ipv4.dstAddr              : 0a00030a
+
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Table 'MyIngress.proxy_exact': hit with handle 0
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Dumping entry 0
+Match key:
+* standard_metadata.ingress_port: EXACT     0003
+* hdr.ipv4.srcAddr              : EXACT     0a00010a
+* hdr.ipv4.dstAddr              : EXACT     0a00030a
+Action entry: MyIngress.restore_nsh - 64,fd,14,b3,1,
+
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Action entry is MyIngress.restore_nsh - 64,fd,14,b3,1,
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] Action MyIngress.restore_nsh
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(299) Primitive hdr.inner_ethernet.setValid()
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(300) Primitive hdr.nsh.setValid()
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(302) Primitive hdr.inner_ethernet.dstAddr = hdr.outer_ethernet.dstAddr
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(303) Primitive hdr.inner_ethernet.srcAddr = hdr.outer_ethernet.srcAddr
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(304) Primitive hdr.inner_ethernet.etherType = 0x0800
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(306) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(307) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(309) Primitive hdr.nsh.ver = 0
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(310) Primitive hdr.nsh.oam = 0
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(311) Primitive hdr.nsh.u1 = 0
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(312) Primitive hdr.nsh.ttl = 15
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(313) Primitive hdr.nsh.length = 6
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(314) Primitive hdr.nsh.u2 = 0
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(315) Primitive hdr.nsh.md_type = 1
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(316) Primitive hdr.nsh.next_proto = 3
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(317) Primitive hdr.nsh.spi = spi
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(318) Primitive hdr.nsh.si = si
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(321) Primitive if
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(322) Primitive hdr.mpls.setValid()
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(323) Primitive hdr.mpls.label = mpls_label
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(324) Primitive hdr.mpls.tc = 0
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(325) Primitive hdr.mpls.bos = 1
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(326) Primitive hdr.mpls.ttl = 64
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(6) Primitive 0x8847; ...
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(321) Primitive if
+[06:18:36.202] [bmv2] [T] [thread 43] [17.0] [cxt 0] /shared/project_2.p4(334) Primitive standard_metadata.egress_spec = port
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Pipeline 'ingress': end
+[06:18:36.202] [bmv2] [D] [thread 43] [17.0] [cxt 0] Egress port is 1
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Pipeline 'egress': start
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Pipeline 'egress': end
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparser 'deparser': start
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Updating checksum 'cksum'
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparsing header 'mpls'
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparsing header 'nsh'
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparsing header 'inner_ethernet'
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:36.202] [bmv2] [D] [thread 45] [17.0] [cxt 0] Deparser 'deparser': end
+[06:18:36.202] [bmv2] [D] [thread 48] [17.0] [cxt 0] Transmitting packet of size 124 out of port 1
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Processing packet received on port 1
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser 'parser': start
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser state 'start': key is 8847
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] Bytes parsed: 14
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser 'parser' entering state 'parse_mpls'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Extracting header 'mpls'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser state 'parse_mpls' has no switch, going to default next state
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] Bytes parsed: 18
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser 'parser' entering state 'parse_nsh'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Extracting header 'nsh'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Extracting header 'inner_ethernet'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser state 'parse_nsh': key is 0800
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] Bytes parsed: 40
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Extracting header 'ipv4'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] Bytes parsed: 60
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Parser 'parser': end
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Pipeline 'ingress': start
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is false
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(390) Condition "hdr.nsh.isValid()" (node_7) is true
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] Applying table 'MyIngress.sff_exact'
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Looking up key:
+* hdr.nsh.spi         : 000064
+* hdr.nsh.si          : fb
+
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Table 'MyIngress.sff_exact': hit with handle 1
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Dumping entry 1
+Match key:
+* hdr.nsh.spi         : EXACT     000064
+* hdr.nsh.si          : EXACT     fb
+Action entry: MyIngress.forward_to_sf - 4,
+
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Action entry is MyIngress.forward_to_sf - 4,
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] Action MyIngress.forward_to_sf
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(247) Primitive hdr.mpls.setInvalid()
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(248) Primitive hdr.nsh.setInvalid()
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(251) Primitive hdr.outer_ethernet = hdr.inner_ethernet
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(252) Primitive hdr.inner_ethernet.setInvalid()
+[06:18:36.209] [bmv2] [T] [thread 43] [18.0] [cxt 0] /shared/project_2.p4(254) Primitive standard_metadata.egress_spec = sf_port
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Pipeline 'ingress': end
+[06:18:36.209] [bmv2] [D] [thread 43] [18.0] [cxt 0] Egress port is 4
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Pipeline 'egress': start
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Pipeline 'egress': end
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Deparser 'deparser': start
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Updating checksum 'cksum'
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:36.210] [bmv2] [D] [thread 44] [18.0] [cxt 0] Deparser 'deparser': end
+[06:18:36.210] [bmv2] [D] [thread 48] [18.0] [cxt 0] Transmitting packet of size 98 out of port 4
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Processing packet received on port 4
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Parser 'parser': start
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] Bytes parsed: 14
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Extracting header 'ipv4'
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] Bytes parsed: 34
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Parser 'parser': end
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Pipeline 'ingress': start
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0004
+* hdr.ipv4.srcAddr              : 0a00010a
+* hdr.ipv4.dstAddr              : 0a00030a
+
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Table 'MyIngress.proxy_exact': hit with handle 1
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Dumping entry 1
+Match key:
+* standard_metadata.ingress_port: EXACT     0004
+* hdr.ipv4.srcAddr              : EXACT     0a00010a
+* hdr.ipv4.dstAddr              : EXACT     0a00030a
+Action entry: MyIngress.end_of_chain - f2,2,
+
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Action entry is MyIngress.end_of_chain - f2,2,
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] Action MyIngress.end_of_chain
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(270) Primitive hdr.mpls.setInvalid()
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(271) Primitive hdr.nsh.setInvalid()
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(273) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(274) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(275) Primitive hdr.outer_ethernet.etherType = 0x0800
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(277) Primitive hdr.inner_ethernet.setInvalid()
+[06:18:36.211] [bmv2] [T] [thread 43] [19.0] [cxt 0] /shared/project_2.p4(279) Primitive standard_metadata.egress_spec = port
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Pipeline 'ingress': end
+[06:18:36.211] [bmv2] [D] [thread 43] [19.0] [cxt 0] Egress port is 2
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Pipeline 'egress': start
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Pipeline 'egress': end
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Deparser 'deparser': start
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Updating checksum 'cksum'
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:36.211] [bmv2] [D] [thread 46] [19.0] [cxt 0] Deparser 'deparser': end
+[06:18:36.211] [bmv2] [D] [thread 48] [19.0] [cxt 0] Transmitting packet of size 98 out of port 2
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Processing packet received on port 1
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser 'parser': start
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser state 'start': key is 8847
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] Bytes parsed: 14
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser 'parser' entering state 'parse_mpls'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Extracting header 'mpls'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser state 'parse_mpls' has no switch, going to default next state
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] Bytes parsed: 18
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser 'parser' entering state 'parse_nsh'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Extracting header 'nsh'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Extracting header 'inner_ethernet'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser state 'parse_nsh': key is 0800
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] Bytes parsed: 40
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Extracting header 'ipv4'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] Bytes parsed: 60
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Parser 'parser': end
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Pipeline 'ingress': start
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is false
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(390) Condition "hdr.nsh.isValid()" (node_7) is true
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] Applying table 'MyIngress.sff_exact'
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Looking up key:
+* hdr.nsh.spi         : 000064
+* hdr.nsh.si          : ff
+
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Table 'MyIngress.sff_exact': hit with handle 0
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Dumping entry 0
+Match key:
+* hdr.nsh.spi         : EXACT     000064
+* hdr.nsh.si          : EXACT     ff
+Action entry: MyIngress.forward_to_sf - 3,
+
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Action entry is MyIngress.forward_to_sf - 3,
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] Action MyIngress.forward_to_sf
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(247) Primitive hdr.mpls.setInvalid()
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(248) Primitive hdr.nsh.setInvalid()
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(251) Primitive hdr.outer_ethernet = hdr.inner_ethernet
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(252) Primitive hdr.inner_ethernet.setInvalid()
+[06:18:37.201] [bmv2] [T] [thread 43] [20.0] [cxt 0] /shared/project_2.p4(254) Primitive standard_metadata.egress_spec = sf_port
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Pipeline 'ingress': end
+[06:18:37.201] [bmv2] [D] [thread 43] [20.0] [cxt 0] Egress port is 3
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Pipeline 'egress': start
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Pipeline 'egress': end
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Deparser 'deparser': start
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Updating checksum 'cksum'
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:37.201] [bmv2] [D] [thread 47] [20.0] [cxt 0] Deparser 'deparser': end
+[06:18:37.201] [bmv2] [D] [thread 48] [20.0] [cxt 0] Transmitting packet of size 98 out of port 3
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Processing packet received on port 3
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Parser 'parser': start
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:37.203] [bmv2] [T] [thread 43] [21.0] [cxt 0] Bytes parsed: 14
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Extracting header 'ipv4'
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:37.203] [bmv2] [T] [thread 43] [21.0] [cxt 0] Bytes parsed: 34
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Parser 'parser': end
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Pipeline 'ingress': start
+[06:18:37.203] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:37.203] [bmv2] [T] [thread 43] [21.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0003
+* hdr.ipv4.srcAddr              : 0a00010a
+* hdr.ipv4.dstAddr              : 0a00030a
+
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Table 'MyIngress.proxy_exact': hit with handle 0
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Dumping entry 0
+Match key:
+* standard_metadata.ingress_port: EXACT     0003
+* hdr.ipv4.srcAddr              : EXACT     0a00010a
+* hdr.ipv4.dstAddr              : EXACT     0a00030a
+Action entry: MyIngress.restore_nsh - 64,fd,14,b3,1,
+
+[06:18:37.203] [bmv2] [D] [thread 43] [21.0] [cxt 0] Action entry is MyIngress.restore_nsh - 64,fd,14,b3,1,
+[06:18:37.203] [bmv2] [T] [thread 43] [21.0] [cxt 0] Action MyIngress.restore_nsh
+[06:18:37.203] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(299) Primitive hdr.inner_ethernet.setValid()
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(300) Primitive hdr.nsh.setValid()
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(302) Primitive hdr.inner_ethernet.dstAddr = hdr.outer_ethernet.dstAddr
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(303) Primitive hdr.inner_ethernet.srcAddr = hdr.outer_ethernet.srcAddr
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(304) Primitive hdr.inner_ethernet.etherType = 0x0800
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(306) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(307) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(309) Primitive hdr.nsh.ver = 0
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(310) Primitive hdr.nsh.oam = 0
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(311) Primitive hdr.nsh.u1 = 0
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(312) Primitive hdr.nsh.ttl = 15
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(313) Primitive hdr.nsh.length = 6
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(314) Primitive hdr.nsh.u2 = 0
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(315) Primitive hdr.nsh.md_type = 1
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(316) Primitive hdr.nsh.next_proto = 3
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(317) Primitive hdr.nsh.spi = spi
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(318) Primitive hdr.nsh.si = si
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(321) Primitive if
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(322) Primitive hdr.mpls.setValid()
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(323) Primitive hdr.mpls.label = mpls_label
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(324) Primitive hdr.mpls.tc = 0
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(325) Primitive hdr.mpls.bos = 1
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(326) Primitive hdr.mpls.ttl = 64
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(6) Primitive 0x8847; ...
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(321) Primitive if
+[06:18:37.204] [bmv2] [T] [thread 43] [21.0] [cxt 0] /shared/project_2.p4(334) Primitive standard_metadata.egress_spec = port
+[06:18:37.204] [bmv2] [D] [thread 43] [21.0] [cxt 0] Pipeline 'ingress': end
+[06:18:37.204] [bmv2] [D] [thread 43] [21.0] [cxt 0] Egress port is 1
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Pipeline 'egress': start
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Pipeline 'egress': end
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparser 'deparser': start
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Updating checksum 'cksum'
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparsing header 'mpls'
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparsing header 'nsh'
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparsing header 'inner_ethernet'
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:37.204] [bmv2] [D] [thread 45] [21.0] [cxt 0] Deparser 'deparser': end
+[06:18:37.204] [bmv2] [D] [thread 48] [21.0] [cxt 0] Transmitting packet of size 124 out of port 1
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Processing packet received on port 1
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser 'parser': start
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser state 'start': key is 8847
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] Bytes parsed: 14
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser 'parser' entering state 'parse_mpls'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Extracting header 'mpls'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser state 'parse_mpls' has no switch, going to default next state
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] Bytes parsed: 18
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser 'parser' entering state 'parse_nsh'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Extracting header 'nsh'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Extracting header 'inner_ethernet'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser state 'parse_nsh': key is 0800
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] Bytes parsed: 40
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Extracting header 'ipv4'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] Bytes parsed: 60
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Parser 'parser': end
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Pipeline 'ingress': start
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is false
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(390) Condition "hdr.nsh.isValid()" (node_7) is true
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] Applying table 'MyIngress.sff_exact'
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Looking up key:
+* hdr.nsh.spi         : 000064
+* hdr.nsh.si          : fb
+
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Table 'MyIngress.sff_exact': hit with handle 1
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Dumping entry 1
+Match key:
+* hdr.nsh.spi         : EXACT     000064
+* hdr.nsh.si          : EXACT     fb
+Action entry: MyIngress.forward_to_sf - 4,
+
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Action entry is MyIngress.forward_to_sf - 4,
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] Action MyIngress.forward_to_sf
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(247) Primitive hdr.mpls.setInvalid()
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(248) Primitive hdr.nsh.setInvalid()
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(251) Primitive hdr.outer_ethernet = hdr.inner_ethernet
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(252) Primitive hdr.inner_ethernet.setInvalid()
+[06:18:37.212] [bmv2] [T] [thread 43] [22.0] [cxt 0] /shared/project_2.p4(254) Primitive standard_metadata.egress_spec = sf_port
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Pipeline 'ingress': end
+[06:18:37.212] [bmv2] [D] [thread 43] [22.0] [cxt 0] Egress port is 4
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Pipeline 'egress': start
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Pipeline 'egress': end
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Deparser 'deparser': start
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Updating checksum 'cksum'
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Deparsing header 'outer_ethernet'
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Deparsing header 'ipv4'
+[06:18:37.212] [bmv2] [D] [thread 44] [22.0] [cxt 0] Deparser 'deparser': end
+[06:18:37.212] [bmv2] [D] [thread 48] [22.0] [cxt 0] Transmitting packet of size 98 out of port 4
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Processing packet received on port 4
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Parser 'parser': start
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Parser 'parser' entering state 'start'
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Extracting header 'outer_ethernet'
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Parser state 'start': key is 0800
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] Bytes parsed: 14
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Parser 'parser' entering state 'parse_ipv4'
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Extracting header 'ipv4'
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Parser state 'parse_ipv4': key is 01
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] Bytes parsed: 34
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Parser 'parser': end
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Pipeline 'ingress': start
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(374) Condition "hdr.ipv4.isValid() && !hdr.nsh.isValid()" (node_2) is true
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] Applying table 'MyIngress.proxy_exact'
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Looking up key:
+* standard_metadata.ingress_port: 0004
+* hdr.ipv4.srcAddr              : 0a00010a
+* hdr.ipv4.dstAddr              : 0a00030a
+
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Table 'MyIngress.proxy_exact': hit with handle 1
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Dumping entry 1
+Match key:
+* standard_metadata.ingress_port: EXACT     0004
+* hdr.ipv4.srcAddr              : EXACT     0a00010a
+* hdr.ipv4.dstAddr              : EXACT     0a00030a
+Action entry: MyIngress.end_of_chain - f2,2,
+
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Action entry is MyIngress.end_of_chain - f2,2,
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] Action MyIngress.end_of_chain
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(270) Primitive hdr.mpls.setInvalid()
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(271) Primitive hdr.nsh.setInvalid()
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(273) Primitive hdr.outer_ethernet.srcAddr = hdr.outer_ethernet.dstAddr
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(274) Primitive hdr.outer_ethernet.dstAddr = next_hop_mac
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(275) Primitive hdr.outer_ethernet.etherType = 0x0800
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(277) Primitive hdr.inner_ethernet.setInvalid()
+[06:18:37.214] [bmv2] [T] [thread 43] [23.0] [cxt 0] /shared/project_2.p4(279) Primitive standard_metadata.egress_spec = port
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Pipeline 'ingress': end
+[06:18:37.214] [bmv2] [D] [thread 43] [23.0] [cxt 0] Egress port is 2
+[06:18:37.214] [bmv2] [D] [thread 46] [23.0] [cxt 0] Pipeline 'egress': start
+[06:18:37.214] [bmv2] [D] [thread 46] [23.0] [cxt 0
