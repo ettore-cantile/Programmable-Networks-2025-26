@@ -152,7 +152,7 @@ The lab topology is defined in `lab.conf` and consists of the following node rol
 | Node | Role | Description |
 |------|------|-------------|
 | **A** | SFC Classifier + Edge Device | Classifies incoming traffic from H1/H2 and initiates NSH+MPLS encapsulation |
-| **B, C, F, G, H** | Underlay Transit | Forwards MPLS-encapsulated packets through the core network |
+| **B, C, F, G** | Underlay Transit | Forwards MPLS-encapsulated packets through the core network |
 | **D** | SFC Forwarder ( SFF ) + Proxy | Steers packets to SF1/SF2, re-encapsulates returned traffic and forwards to the next SFF |
 | **E** | SFC Forwarder ( SFF ) + Proxy | Steers packets to SF3, re-encapsulates returned traffic and signals end of chain |
 | **SF1, SF2, SF3** | Service Functions | NSH-unaware reflectors; receive decapsulated IPv4 frames, apply a DSCP watermark, and return traffic to the SFF |
@@ -165,7 +165,7 @@ Hosts H1 ( `10.0.1.10/24` ) and H2 ( `10.0.2.10/24` ) are connected to Node A ( 
 The primary objective of this project is to implement a complete **P4-based SFC pipeline** operating on a real programmable data plane, achieving the following:
 
 1. **SFC Classification:** Node A matches incoming IPv4 flows ( by `srcAddr` + `dstAddr` ) and encapsulates them with an **NSH header** ( carrying SPI and SI ) wrapped inside an **MPLS label**, injecting traffic into the SFC domain.
-2. **MPLS Underlay Forwarding:** Transit nodes ( B, C, F, G, H ) switch packets based on MPLS labels, providing hop-by-hop transport between SFFs without inspecting the SFC payload.
+2. **MPLS Underlay Forwarding:** Transit nodes ( B, C, F, G ) switch packets based on MPLS labels, providing hop-by-hop transport between SFFs without inspecting the SFC payload.
 3. **SFF Proxy Logic:** Nodes D and E implement the **SFF Proxy** pattern — they strip SFC headers before delivering packets to NSH-unaware SFs, and transparently restore the NSH context ( updating SPI/SI ) upon return, forwarding to the next SFF or triggering end-of-chain delivery.
 4. **SF Watermarking:** Service Functions ( SF1, SF2, SF3 ) act as pure reflectors: they receive bare IPv4/Ethernet frames, increment the `diffserv` ( DSCP ) field as a **traversal watermark**, and return the packet on the same ingress port.
 5. **End-of-Chain Delivery:** After all SFs have processed the packet, the final SFF strips the remaining SFC headers and forwards the restored IPv4 frame toward the destination host via standard routing.
